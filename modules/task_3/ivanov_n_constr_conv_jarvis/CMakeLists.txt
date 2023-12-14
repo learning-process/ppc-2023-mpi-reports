@@ -8,6 +8,7 @@ if ( USE_LATEX )
 
     get_filename_component(report_names ${report_files} NAME)
     add_latex_document(${report_names})
+    file(COPY images DESTINATION ${LATEX_OUTPUT_PATH})
 
     add_custom_command(
             TARGET ${ProjectId}_pdf
