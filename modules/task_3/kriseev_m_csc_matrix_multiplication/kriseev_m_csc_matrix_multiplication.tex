@@ -1,0 +1,545 @@
+\documentclass[a4paper,12pt]{article}
+\usepackage[T2A]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[english,russian]{babel}
+\usepackage{listings}
+\usepackage[colorlinks=false]{hyperref}
+\usepackage{indentfirst}
+\usepackage{multirow}
+\usepackage{enumitem}
+\usepackage{titlesec}
+\usepackage{secdot}
+\usepackage{tocloft}
+\titlelabel{\thetitle. \quad}
+\usepackage{geometry}
+\geometry{left=2.5cm}
+\geometry{right=1.5cm}
+\geometry{top=2cm}
+\geometry{bottom=2cm}
+
+\titlespacing*{\section}{0em}{0ex}{1em}
+
+\usepackage{color}
+\definecolor{dkgreen}{rgb}{0,0.6,0}
+\definecolor{gray}{rgb}{0.5,0.5,0.5}
+\definecolor{mauve}{rgb}{0.58,0, 0.82}
+
+\lstset{
+language=C++,
+aboveskip=3mm,
+xleftmargin=10mm,
+belowskip=3mm,
+showstringspaces=false,
+columns=flexible,
+basicstyle={\ttfamily},
+numbers=none,
+numberstyle=\small\color{gray},
+keywordstyle=\color{blue},
+commentstyle=\color{dkgreen},
+stringstyle=\color{mauve},
+breaklines=true,
+breakatwhitespace=true,
+tabsize=3
+}
+
+\renewcommand{\thesection}{\arabic{section}}
+\renewcommand{\cftsecleader}{\cftdotfill{\cftdotsep}}
+
+\begin{document}
+\begin{titlepage}
+ \begin{center}
+{\small МИНИСТЕРСТВО НАУКИ И ВЫСШЕГО ОБРАЗОВАНИЯ РОССИЙСКОЙ ФЕДЕРАЦИИ\\
+ Федеральное государственное автономное образовательное учреждение
+высшего образования
+}
+\textbf{<<Национальный исследовательский
+Нижегородский государственный университет им. Н.И. Лобачевского>>\\
+(ННГУ)\\}
+
+\vspace*{1cm}
+
+\textbf{Институт информационных технологий, математики и механики}
+
+\vspace*{3cm}
+
+\textbf{\LargeОТЧЁТ}
+
+по лабораторной работе
+
+\vspace{1em}
+
+\textbf{\large<<Умножение разреженных матриц в формате CCS>>}
+
+\end{center}
+
+\vspace{2cm}
+
+\begin{flushright}
+\parbox{8.5cm}{
+\textbf{Выполнил:}
+
+студент группы 3821Б1ПР1\\
+Крисеев М.А.
+
+\textbf{Преподаватель:}
+
+доцент кафедры высокопроизводительных вычислений и системного программирования\\
+кандидат технических наук\\
+Сысоев А.В.
+}
+\end{flushright}
+
+\flushbottom
+
+\vfill
+
+\begin{center}
+ Нижний Новгород
+
+ 2023
+\end{center}
+
+\end{titlepage}
+
+\tableofcontents
+
+\newpage
+
+\section{Введение}
+\par
+При решении задач, связанных с использованием матриц, зачастую приходится работать с \textit{разреженными матрицами}.
+Такие матрицы содержат в себе большое колисество нулевых элементов, из-за чего хранить все эти элементы -- неэффективно.
+
+Проблему хранения разреженных матриц можно решить множеством способов. Один из них -- хранение ненулевых элементов по столбцам, CCS, Compressed column storage (также используется название CSC -- Compressed sparse column).
+
+Для представления разреженной матрицы размера $M$x$N$ в формате CCS используется три массива:
+
+\begin{itemize}
+\item $values$ -- содержит все ненулевые значения элементов матрицы,
+\item $rowIndices$ -- содержит номера строк, на которых находятся соответствующие элементы $values$,
+\item $columnPointers$, $C_p$ -- массив размера $N+1$, каждый элемент которого задаёт индекс элемента из предыдущих массивов, с которого начинается соответствующий столбец матрицы и которым заканчивается предыдущий столбец. $C_p[0]$ всегда равен 0, $C_p[N]$ всегда равен размеру $values$.
+
+Несмотря на б\'{о}льшую эффективность хранения разреженных матриц в формате CCS, некоторые типовые задачи, такие как умножение матриц, при этом приходится реализовывать по-другому. Именно умножение матриц и рассмотрено в данной лабораторной работе.
+
+\end{itemize}
+\newpage
+\section{Основная часть}
+\subsection{Постановка задачи}
+\textbf{Задача:} реализовать алгоритм умножения двух разреженных матриц, сохранённых в формате CCS. Реализовать параллельную версию данного алгоритма. Написать программу, испольняющую данные алгоритмы, для параллельной версии использовать библиотеку MPI. Провести эксперименты и замерить производительность данных алгоритмов.
+\subsection{Описание алгоритма}
+
+Умножение матриц представляет собой множество скалярных произведений строк первой матрицы на столбцы второй. Поскольку обе матрицы хранятся в столбцовом формате CCS - производить итерации по строкам становится неудобно, поэтому первое, что целесообразно сделать -- \textit{транспонировать первую матрицу}.
+
+Для этого создаём новую матрицу, массивы $rowIndices$ и $values$ оставляем пустыми, в массив $columnPointers$ добавляем 0.
+
+Находим наибольший индекс строки из массива $rowIndices$ исходной матрицы.
+Проходим циклом по строкам до этого индекса, для каждой строки проходим по всему массиву $rowIndices$ исходной матрицы, и если индекс $i$ строки равен индексу элемента $j$ из $rowIndices$, то добавляем $values[j]$ в конец массива $values$ новой матрицы. Находим, какому столбцу в исходной матрице принадлежит элемент c индексом $j$ и добавляем индекс этого столбца в конец $rowIndices$ новой матрицы. После завершения цикла по $rowIndices$ длину $rowIndices$ новой матрицы добавляем в конец её $columnPointers$.
+
+В результате получаем транспонированную матрицу, записанную в формате CCS.
+
+Вторым шагом является непосредственно умножение двух матриц.
+
+В результате умножения должна получиться матрица, содержащая столько же строк, сколько их в первой (не транспонированной) матрице, и столько же столбцов, сколько их во второй матрице. Это можно использовать, чтобы организовать цикл по всем будущим элементам результирующей матрицы, внешний цикл по её столбцам, вложенный - по строкам.
+
+Для каждого элемента можно использовать следующий алгоритм скалярного произведения разреженных столбцов (предполагая, что число строк равно $N$):
+\begin{enumerate}[label*=\arabic*.]
+ \item Инициализируем результат умножения нулём,
+ \item Заполняем массив $L$ из $N$ элементов значениями $-1$,
+ \item Проходим по всем ненулевым элементам первого столбца:
+ \begin{enumerate}[label*=\arabic*.]
+    \item Индекс $k$ текущего элемента в $rowIndices$ записываем в $L$ по индексу, равному $rowIndices[k]$,
+\end{enumerate}
+\item Проходим по всем элементам второго столбца (номер элемента: $m$):
+\begin{enumerate}[label*=\arabic*.]
+ \item Если в $L$ по индексу, равному $rowIndices[m]$, лежит значение, не равное $-1$, то
+ к результату прибавляем значение текущего элемента, умноженное на значение $a.values[L[rowIndices[m]]]$, где $a$ -- первая матрица
+\end{enumerate}
+\item Если результат не равен нулю, то добавляем его в конец $values$ результирующей матрицы.
+Значение строки (номер итерации внутреннего цикла) добавляем в конец $rowIndices$ результирующей матрицы.
+\end{enumerate}
+
+После каждого завершения работы вложенного цикла в массив $columnPointers$ добавляем в конец размер $rowIndices$.
+
+В конце концов, получаем новую разреженную матрицу, являющуюся результатом произведения двух исходных.
+
+\subsection{Описание схемы распараллеливания}
+
+Поскольку все итерации по элементам результирующей матрицы независимы и используют только неизменяющиеся значения элементов исходных матриц, схема распараллеливания достаточно тривиальна.
+
+Каждому процессу распределяется свой набор столбцов, которые ему необходимо вычислить. После этого все производят вычисления и результат собирается на главном потоке в готовую матрицу.
+
+Несмотря на тривиальность распараллеливания самого процесса умножения, собрать готовую матрицу достаточно сложно.
+
+Чтобы упростить данную задачу, каждому процессу выделяем последовательный набор столбцов для вычисления. Таким образом, при слиянии двух матриц, полученных от них, ненулевые столбцы одной всегда будут расположены после столбцов другой.
+
+Находим матрицу, у которой ненулевые столбцы начинаются раньше. К её массиву $rowIndices$ добавляем все элементы $rowIndices$ другой матрицы. Аналогично поступаем с их массивами $values$. Затем складываем поэлементно значения их массивов $columnPointers$. Последовательно сливая матрицы, полученные от процессов, получаем искомую.
+
+\subsection{Описание реализации на MPI}
+Для реализации параллельного алгоритма была использована надстройка из boost над MPI.
+
+Чтобы было удобнее работать с матрицами, три массива и две целочисленных переменных, обозначающих размеры матрицы, были объединены в один класс. Также в этот класс добавлены методы $findElementColumn(size\_t\ index)$ для поиска столбца, в котором находится элемент, и $transpose()$, возвращающий транспонированную копию данной матрицы. Была добавлена функция сериализации данного класса средствами boost.
+
+При вызове функции параллельного алгоритма на нескольких процессах предполагается, что входные данные у всех одинаковые. Дополнительные проверки этого отсутствуют.
+
+Количество столбцов на каждый процесс вычисляется на всех процессах. После завершения вычислений каждым процессом, вызывается обёртка функции MPI\_All\_reduce boost::mpi::all\_reduce. В качестве операции туда передаётся структура с перегруженным оператором <<()>>, который выполняет слияние двух матриц.
+
+После этого готовый результат возвращается каждым процессом.
+
+\subsection{Результаты экспериментов}
+В качестве метрики производительности я использовал время выполнения. Хотя это и не является достаточно объективной метрикой и зависит от множества параметров, при запуске кода на одной и той же машине можно получить некоторое общее представление о быстродействии алгоритма и ускорении (или замедлении) параллельной версии.
+
+Для измерения времени использована обёртка для boost над встроенным таймером MPI. Это даёт основания считать измерения корректными.
+
+Все измерения проводились на ноутбуке. Процессор: AMD Ryzen 3 5300U. ОС: Arch linux.
+
+В результате серии экспериментов получились следующие результаты:
+
+\begin{tabular}{|p{3.5cm}|p{3cm}|p{3cm}|p{3cm}|}
+ \hline
+ & \multicolumn{3}{|c|}{Время работы}\\
+ \hline
+ Размер матрицы & 1 процесс & 2 процесса & 4 процесса\\
+ \hline
+ 10x10 & $4.191*10^{-3}$ мс & $7.717*10^{-2}$ мс & $0.133$ мс\\
+ \hline
+ 100x100 & $1.053$ мс & $1.756$ мс & $2.479$ мс\\
+ \hline
+ 1000x1000 & $900$ мс & $652$ мс & $697$ мс\\
+ \hline
+\end{tabular}
+\newpage
+\section{Выводы}
+В ходе экспериментов было выявлено, что на малых размерах умножаемых матриц последовательный алгоритм значительно обгоняет параллельный, однако с увеличением размеров эта разница уменьшается и в некоторый момент уже параллельный алгоритм начинает работать быстрее.
+
+Также можно заметить, что скорость работы не увеличивается с увеличением числа процессов, а наоборот падает или остаётся на том же уровне. Это может свидетельствовать о некоторой неэффективности алгоритма.
+
+Главной проблемой и <<бутылочным горлышком>> данной реализации алгоритма, на мой взгляд, является функция слияния. Хотя у меня получилось значительно её упростить, судя по всему, её выполнение всё еще занимает много времени.
+
+\newpage
+\section{Заключение}
+В результате выполнения данной работы у меня получилось реализовать достаточно эффективный последовательный алгоритм умножения разреженных матриц, хранящихся в формате CCS, а также сделать параллельную версию данного алгоритма, которая менее эффективна на малых размерах матриц, но обгоняет последовательную на больших.
+\newpage
+\section{Литература}
+\begin{enumerate}
+\item Sparse matrix // Wikipedia. -- Режим доступа: https://en.wikipedia.org/wiki/Sparse\_matrix
+\item Кустикова В.Д., Мееров И.Б., Сысоев А.В. Параллельные численные методы. Лабораторная работа:
+Умножение разреженной матрицы на вектор // Сайт Центра суперкомпьютерных технологий ННГУ -- Режим доступа: http://www.hpcc.unn.ru/file.php?id=492
+
+\end{enumerate}
+
+\newpage
+\section*{Приложение A}
+\addcontentsline{toc}{section}{Приложение A}
+Код заголовочного файла проекта:
+\begin{lstlisting}[language=C++]
+#ifndef CSC_MATRIX_MULTIPLICATION_H_
+#define CSC_MATRIX_MULTIPLICATION_H_
+
+#include <vector>
+#include <boost/serialization/vector.hpp>
+
+struct CscMatrix {
+ public:
+    std::vector<double> values;
+    std::vector<size_t> rowIndices;
+    std::vector<size_t> columnPointers;
+    size_t rows;
+    size_t cols;
+
+    CscMatrix(size_t rows = 0, size_t cols = 0,
+              const std::vector<double> &values = {},
+              const std::vector<size_t> &rowIndices = {},
+              const std::vector<size_t> &columnPointers = {0});
+    CscMatrix(const CscMatrix &c);
+
+    bool operator==(const CscMatrix &b) const;
+
+    CscMatrix transpose() const;
+
+    void print() const;
+
+    void setElement(size_t column, size_t row, double value);
+
+    size_t findElementColumn(size_t index) const;
+};
+
+CscMatrix multiplyCscMatricesSequential(const CscMatrix &a, const CscMatrix &b);
+CscMatrix multiplyCscMatricesParallel(const CscMatrix &a, const CscMatrix &b);
+
+struct MergeMatrices {
+    CscMatrix operator()(const CscMatrix &a, const CscMatrix &b);
+};
+
+namespace boost {
+namespace serialization {
+template <class Archive>
+void serialize(Archive &ar, CscMatrix &m,
+               const unsigned int version) {
+    ar & m.rows;
+    ar & m.cols;
+    ar & m.values;
+    ar & m.rowIndices;
+    ar & m.columnPointers;
+}
+}  // namespace serialization
+}  // namespace boost
+
+#endif  // CSC_MATRIX_MULTIPLICATION_H_
+
+\end{lstlisting}
+\newpage
+\section*{Приложение B}
+\addcontentsline{toc}{section}{Приложение B}
+Код файла с реализацией функций
+\begin{lstlisting}[language=C++]
+#include "csc_matrix_multiplication.h"
+#include <algorithm>
+#include <iostream>
+#include <limits>
+#include <boost/mpi/communicator.hpp>
+#include <boost/mpi/collectives.hpp>
+#include <boost/serialization/vector.hpp>
+
+void appendMatrix(CscMatrix &a, const CscMatrix &b) {
+    a.rowIndices.reserve(a.rowIndices.size() + b.rowIndices.size());
+    a.values.reserve(a.values.size() + b.values.size());
+
+    for (int i = 0; i < b.rowIndices.size(); ++i) {
+        a.rowIndices.push_back(b.rowIndices[i]);
+        a.values.push_back(b.values[i]);
+    }
+    for (int i = 1; i < b.columnPointers.size(); ++i) {
+        a.columnPointers[i] += b.columnPointers[i];
+    }
+}
+
+CscMatrix::CscMatrix(size_t rows, size_t cols,
+                     const std::vector<double> &values,
+                     const std::vector<size_t> &rowIndices,
+                     const std::vector<size_t> &columnPointers)
+    : rows(rows),
+      cols(cols),
+      values(values),
+      rowIndices(rowIndices),
+      columnPointers(columnPointers) {}
+CscMatrix::CscMatrix(const CscMatrix &c)
+    : rows(c.rows),
+      cols(c.cols),
+      values(c.values),
+      rowIndices(c.rowIndices),
+      columnPointers(c.columnPointers) {}
+bool CscMatrix::operator==(const CscMatrix &b) const {
+    if (b.rows != rows || b.cols != cols ||
+        b.rowIndices.size() != rowIndices.size()) {
+        return false;
+    }
+    for (size_t i = 0; i < b.rowIndices.size(); ++i) {
+        if (std::abs(values[i] - b.values[i]) >
+            std::numeric_limits<double>::epsilon()) {
+            return false;
+        }
+        if (rowIndices[i] != b.rowIndices[i]) {
+            return false;
+        }
+    }
+    for (size_t c = 0; c < b.columnPointers.size(); ++c) {
+        if (columnPointers[c] != b.columnPointers[c]) {
+            return false;
+        }
+    }
+    return true;
+}
+
+CscMatrix CscMatrix::transpose() const {
+    CscMatrix n = {this->cols, this->rows};
+    if (this->rowIndices.empty()) {
+        n.columnPointers.push_back(0);
+        return n;
+    }
+    size_t maxRow =
+        *std::max_element(this->rowIndices.begin(), this->rowIndices.end());
+    for (size_t i = 0; i <= maxRow; ++i) {
+        for (size_t j = 0; j < this->rowIndices.size(); ++j) {
+            if (this->rowIndices[j] == i) {
+                n.values.push_back(this->values[j]);
+                n.rowIndices.push_back(this->findElementColumn(j));
+            }
+        }
+        n.columnPointers.push_back(n.rowIndices.size());
+    }
+    return n;
+}
+
+void CscMatrix::print() const {
+    std::cout << "v: ";
+    for (auto v : values) {
+        std::cout << v << " ";
+    }
+    std::cout << "r: ";
+    for (auto v : rowIndices) {
+        std::cout << v << " ";
+    }
+    std::cout << "c: ";
+    for (auto v : columnPointers) {
+        std::cout << v << " ";
+    }
+    std::cout << "\n";
+}
+void CscMatrix::setElement(size_t column, size_t row, double value) {
+    size_t beginCol = columnPointers[column];
+    size_t endCol = columnPointers[column + 1];
+    size_t insertIndex = std::lower_bound(rowIndices.begin() + beginCol,
+                                          rowIndices.begin() + endCol, row) -
+                         rowIndices.begin();
+    if (!rowIndices.empty() && row == rowIndices[insertIndex]) {
+        values[insertIndex] = value;
+        return;
+    }
+
+    values.insert(values.begin() + insertIndex, value);
+    rowIndices.insert(rowIndices.begin() + insertIndex, row);
+
+    for (size_t c = column + 1; c < columnPointers.size(); ++c) {
+        columnPointers[c]++;
+    }
+}
+size_t CscMatrix::findElementColumn(size_t index) const {
+    for (size_t i = 0; i < columnPointers.size() - 1; i++) {
+        if (index >= columnPointers[i] && index < columnPointers[i + 1]) {
+            return i;
+        }
+    }
+    return columnPointers.size();
+}
+
+CscMatrix multiplyCscMatricesParallel(const CscMatrix &a, const CscMatrix &b) {
+    boost::mpi::communicator world;
+    if (world.size() == 1) {
+        return multiplyCscMatricesSequential(a, b);
+    }
+    if (a.cols != b.rows) {
+        throw std::invalid_argument("b");
+    }
+
+    CscMatrix a_t(a.cols, a.rows);
+    CscMatrix b_c(b);
+
+    a_t = a.transpose();
+    CscMatrix res = {a_t.cols, b.cols, {}, {}, {0}};
+
+    std::vector<size_t> tempCol(a_t.rows, -1);
+    std::vector<int> j_sizes(world.size(), res.cols / world.size());
+    for (size_t k = 0; k < res.cols % world.size(); ++k) {
+        j_sizes[k]++;
+    }
+    size_t myFirstIndex = 0;
+    for (int i = 0; i < world.rank(); ++i) {
+        myFirstIndex += j_sizes[i];
+    }
+    size_t myLastIndex = myFirstIndex + j_sizes[world.rank()];
+    for (size_t j = 0; j < res.cols; ++j) {
+        if (j >= myFirstIndex && j < myLastIndex) {
+            for (size_t i = 0; i < res.rows; ++i) {
+                double dot = 0;
+                size_t colSizeA =
+                    a_t.columnPointers[i + 1] - a_t.columnPointers[i];
+                size_t colSizeB =
+                    b_c.columnPointers[j + 1] - b_c.columnPointers[j];
+                size_t beginColA = a_t.columnPointers[i];
+                size_t beginColB = b_c.columnPointers[j];
+                tempCol.assign(tempCol.size(), -1);
+                for (size_t k = 0; k < colSizeA; ++k) {
+                    size_t l = a_t.rowIndices[beginColA + k];
+                    tempCol[l] = k;
+                }
+                for (size_t k = 0; k < colSizeB; ++k) {
+                    size_t l = b_c.rowIndices[beginColB + k];
+                    if (tempCol[l] == -1) {
+                        continue;
+                    }
+                    dot += a_t.values[beginColA + tempCol[l]] *
+                           b_c.values[beginColB + k];
+                }
+                if (dot != 0) {
+                    res.values.push_back(dot);
+                    res.rowIndices.push_back(i);
+                }
+            }
+        }
+        res.columnPointers.push_back(res.values.size());
+    }
+    CscMatrix finalRes(res.rows, res.cols);
+    boost::mpi::all_reduce(world, res, finalRes, MergeMatrices());
+    return finalRes;
+}
+
+CscMatrix MergeMatrices::operator()(const CscMatrix &a, const CscMatrix &b) {
+    size_t aFirstCol = 0;
+    for (size_t l = 0; l < a.columnPointers.size() - 1; ++l) {
+        if (a.columnPointers[l] != a.columnPointers[l + 1]) {
+            aFirstCol = l;
+            break;
+        }
+    }
+    size_t bFirstCol = 0;
+    for (size_t l = 0; l < b.columnPointers.size() - 1; ++l) {
+        if (b.columnPointers[l] != b.columnPointers[l + 1]) {
+            bFirstCol = l;
+            break;
+        }
+    }
+
+    if (bFirstCol > aFirstCol) {
+        CscMatrix res(a);
+        appendMatrix(res, b);
+        return res;
+    } else {
+        CscMatrix res(b);
+        appendMatrix(res, a);
+        return res;
+    }
+}
+
+CscMatrix multiplyCscMatricesSequential(const CscMatrix &a,
+                                        const CscMatrix &b) {
+    if (a.cols != b.rows) {
+        throw std::invalid_argument("b");
+    }
+    CscMatrix a_t = a.transpose();
+    CscMatrix res = {a.rows, b.cols, {}, {}, {0}};
+    std::vector<size_t> tempCol(a.cols, -1);
+    for (size_t j = 0; j < res.cols; ++j) {
+        for (size_t i = 0; i < res.rows; ++i) {
+            double dot = 0;
+            size_t colSizeA = a_t.columnPointers[i + 1] - a_t.columnPointers[i];
+            size_t colSizeB = b.columnPointers[j + 1] - b.columnPointers[j];
+            size_t beginColA = a_t.columnPointers[i];
+            size_t beginColB = b.columnPointers[j];
+            tempCol.assign(tempCol.size(), -1);
+
+            for (size_t k = 0; k < colSizeA; ++k) {
+                size_t l = a_t.rowIndices[beginColA + k];
+                tempCol[l] = k;
+            }
+            for (size_t k = 0; k < colSizeB; ++k) {
+                size_t l = b.rowIndices[beginColB + k];
+                if (tempCol[l] == -1) {
+                    continue;
+                }
+                dot += a_t.values[beginColA + tempCol[l]] *
+                       b.values[beginColB + k];
+            }
+
+            if (dot != 0) {
+                res.values.push_back(dot);
+                res.rowIndices.push_back(i);
+            }
+        }
+        res.columnPointers.push_back(res.values.size());
+    }
+    return res;
+}
+
+\end{lstlisting}
+
+\end{document}
