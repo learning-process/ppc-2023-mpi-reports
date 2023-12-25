@@ -1,0 +1,563 @@
+\documentclass{report}
+
+\usepackage[warn]{mathtext}
+\usepackage[T2A]{fontenc}
+\usepackage[utf8]{luainputenc}
+\usepackage[english, russian]{babel}
+\usepackage[pdfpagemode=UseNone,colorlinks,allcolors=black]{hyperref}
+\usepackage{tempora}
+\usepackage[12pt]{extsizes}
+\usepackage{listings}
+\usepackage{color}
+\usepackage{geometry}
+\usepackage{enumitem}
+\usepackage{multirow}
+\usepackage{graphicx}
+\usepackage{indentfirst}
+\usepackage{amsmath}
+\usepackage{soul}
+
+\sethlcolor{gray}
+
+\geometry{a4paper,top=2cm,bottom=2cm,left=2.5cm,right=1.5cm}
+\setlength{\parskip}{0.5cm}
+\setlist{nolistsep, itemsep=0.3cm,parsep=0pt}
+
+\usepackage{listings}
+\lstset{language=C++,
+        basicstyle=\footnotesize,
+		keywordstyle=\color{blue}\ttfamily,
+		stringstyle=\color{red}\ttfamily,
+		commentstyle=\color{green}\ttfamily,
+		morecomment=[l][\color{red}]{\#}, 
+		tabsize=4,
+		breaklines=true,
+  		breakatwhitespace=true,
+  		title=\lstname,       
+}
+
+\makeatletter
+\renewcommand\@biblabel[1]{#1.\hfil}
+\makeatother
+
+\begin{document}
+
+\begin{titlepage}
+
+\begin{center}
+Министерство науки и высшего образования Российской Федерации
+\end{center}
+
+\begin{center}
+Федеральное государственное автономное образовательное учреждение высшего образования \\
+Национальный исследовательский Нижегородский государственный университет им. Н.И. Лобачевского
+\end{center}
+
+\begin{center}
+Институт информационных технологий, математики и механики
+\end{center}
+
+\vspace{4em}
+
+\begin{center}
+\textbf{\LargeОтчет по лабораторной работе} \\
+\end{center}
+\begin{center}
+\textbf{\Large<<Поразрядная сортировка для целых чисел с четно-нечетным слиянием Бэтчера>>} \\
+\end{center}
+
+\vspace{4em}
+
+\newbox{\lbox}
+\savebox{\lbox}{\hbox{text}}
+\newlength{\maxl}
+\setlength{\maxl}{\wd\lbox}
+\hfill\parbox{7cm}{
+\hspace*{5cm}\hspace*{-5cm}\textbf{Выполнил:} \\ студент группы 3821Б1ПР2\\Дерун А. А.\\
+\\
+\hspace*{5cm}\hspace*{-5cm}\textbf{Проверил:}\\ младший научный сотрудник\\Нестеров А. Ю.\\
+}
+\vspace{\fill}
+
+\begin{center} Нижний Новгород \\ 2023 \end{center}
+
+\end{titlepage}
+
+\setcounter{page}{2}
+
+% Содержание
+\tableofcontents
+\newpage
+
+% Введение
+\section*{Введение}
+\addcontentsline{toc}{section}{Введение}
+\par Сортировка данных является одной из ключевых операций в области обработки и анализа информации. В современном мире, где объемы данных растут в геометрической прогрессии, умение эффективно сортировать большие массивы данных является неотъемлемой частью множества задач и приложений. От электронной коммерции до научных исследований, от финансовых операций до социальных сетей, сортировка данных играет важную роль в обеспечении оперативного и точного анализа информации.
+
+\par Целью данной лабораторной работы является изучение и сравнение разных реализаций алгоритма поразрядной сортировки (для чисел типа int) -- последовательной реализации и параллельной. Параллельная обработка данных -- это способ ускорения выполнения вычислительных задач за счет распределения работы между несколькими исполнителями (процессорами, ядрами, потоками и т.д.), которые могут выполняться одновременно и независимо друг от друга.
+
+\par Параллельная обработка данных для поразрядной сортировки заключается в том, что исходный массив разбивается на несколько подмассивов, которые сортируются независимо друг от друга на разных потоках. Затем эти подмассивы объединяются в один массив с помощью генетического алгоритма Слияние Бэтчера и как итог, получается, полностью отсортированный массив.
+
+\newpage
+
+% Постановка задачи
+\section*{Постановка задачи}
+\addcontentsline{toc}{section}{Постановка задачи}
+\par В рамках данной работы нужно выполнить следующие задачи:
+\begin{enumerate}
+    \item Реализовать две версии алгоритма поразрядной сортировки (типа int) со слиянием Бэтчера:
+    \begin{itemize}
+    \item Последовательная реализация. Алгоритм выполняется в одном потоке. Данная реализация существует для сравнения производительности и корректности работы параллельных реализаций.
+    \item Параллельная реализация алгоритма с применением технологии MPI. MPI -- библиотека от компании Microsoft, которая позволяет писать параллельные программы на C, C++, Fortran.
+    \end{itemize}
+    \item Сравнить время работы разных реализаций алгоритма на различных наборах данных (массив случайных чисел, упорядоченный массив и т.д.).
+    \item Сделать выводы по полученным данным.
+\end{enumerate}
+\newpage
+
+% Описание алгоритма
+\section*{Описание алгоритма}
+\addcontentsline{toc}{section}{Описание алгоритма}
+\par Алгоритм Radix (или сортировка по разрядам) представляет собой метод сортировки целых чисел. Он основан на идее последовательной сортировки чисел по разрядам, начиная с младших и заканчивая старшими. Этот алгоритм может применяться как к десятичным, так и к двоичным числам.
+
+\par Общий шаговый алгоритм Radix:
+
+\begin{enumerate}
+    \item Определение количества разрядов: Найдите максимальное число в списке и определите количество его разрядов.
+    \item Разбиение по разрядам: Начните с самого младшего разряда и рассортируйте числа по этому разряду. Затем перейдите к следующему более старшему разряду и повторите процесс.
+    \item Сортировка по разрядам: Для каждого разряда используйте стабильную сортировку (например, сортировку подсчетом) для упорядочивания чисел.
+    \item Повторение процесса: Продолжайте шаги 2-3 для всех разрядов, пока не достигнете самого старшего разряда.
+    \item Получение отсортированного списка: После завершения сортировки по всем разрядам вы получите отсортированный список чисел.
+\end{enumerate}
+
+\par Преимущество алгоритма Radix в том, что он может быть эффективен для сортировки чисел с фиксированным количеством разрядов. Однако стоимость сортировки по разрядам зависит от количества разрядов и диапазона чисел.
+\par Алгоритм Radix может быть реализован для сортировки чисел в различных системах счисления (десятичной, двоичной и т. д.).
+
+\newpage
+
+% Описание схемы распараллеливания
+\section*{Описание схемы распараллеливания}
+
+\par В начале вектор данных разделяется на части. Каждая часть сортируется параллельно при помощи алгоритма поразрядной сортировки. Затем отсортированные части объединяются с помощью функции merge, которая реализует алгоритм слияния по генетической схеме.
+\par В результате все части сливаются в один вектор.
+\newpage
+
+% Описание программной реализации
+\section*{Описание программной реализации}
+\addcontentsline{toc}{section}{Описание программной реализации}
+
+\par Программа состоит из заголовочного файла \emph{radix\_batcher.h} и двух файлов исходного кода \emph{radix\_batcher.cpp} и \emph{main.cpp}.
+
+\subsection*{Функция getRandomVector} 
+Функция принимает в качестве параметров: размер вектора. В ней создаётся вектор конкретного размера и заполяется числа типа double. Функция возвращает созданный вектор.
+
+\subsection*{Функция merge}
+\par Функция реализует алгоритм простого слияния двух отсортированных векторов в один тоже отсортированный вектор.
+Создаётся вектор, размер которого равен сумме размеров двух входных векторов.
+\par После чего в цикле for, который продолжается до достижения значения счётчика значения размера созданного вектора, объединяем массивы, сравнивания элементы каждого между собой и добавляем в результирующий вектор элемент того вектора, значения которого меньше и увеличиваем индекс того вектора, чьё значение добавил в результирующий массив. Если мы пришли к концу одного из векторов, то просто записываем в результирующий массив оставшиеся элементы другого вектора.
+
+\subsection*{Функция oddEvenMerge} 
+\par Функция сливает два вектора в один по четно-нечетной схеме.
+
+\subsection*{Функция createCounters} 
+Функция создает счетчики для алгоритма Radix.
+
+\subsection*{Функция radixPass} 
+\par Функция реализует алгоритм сортировки подсчётом, что требуется для поразрядной сортировки. На вход функции в качестве параметров поступают 2 указателя типа double (входной и выходной массивы) и длина (размер массивов).
+Функция возвращает void.
+
+\subsection*{Функция floatRadixLastPass} 
+\par Функция реализует алгоритм сортировки подсчётом с некоторыми модернизациями для последнего шага в поразрядной сортировки. На вход функции в качестве параметров поступают 2 указателя типа double (входной и выходной массивы) и длина (размер массивов). функция возвращает значение типа bool.
+
+\subsection*{Функция RadixSortParallel} 
+\par Функция запускает Radix по параллельной схеме.
+
+\newpage
+
+% Подтверждение корректности
+\section*{Подтверждение корректности}
+\addcontentsline{toc}{section}{Подтверждение корректности}
+\par Для подтверждения корректности работы программы на фрэймфорке Google Test были написаны 5 тестов для каждой реализации. В каждом тесте запускается умножение матриц разных размеров с разным наполнением.
+\par В последовательной реализации в каждом тесте мы просто запускаем алгоритм и сравниваем полученный результат с контрольным. В параллельных версиях мы запускаем оба алгоритма, последовательный и параллельный, и сравниваем результат работы каждого с контрольным значением.
+\newpage
+
+% Результаты экспериментов
+\section*{Результаты экспериментов}
+\addcontentsline{toc}{section}{Результаты экспериментов}
+Для проведения экспериментов по вычислению эффективности работы разных реализаций программы использовалась система со следующей конфигурацией:
+\begin{itemize}
+\item Процессор: AMD Ryzen 5600G, ядер: 6, потоков: 12;
+\item Оперативная память: 24 ГБ (DDR4), 3600 МГц;
+\item Операционная система: Windows 10 LTSC.
+\end{itemize}
+
+\par Результаты экспериментов:
+\begin{table}[!h]
+\centering
+\begin{tabular}{| c | c | c |}
+\hline
+Версия & Время работы (сек.) & Ускорение (раз) \\
+\hline
+Последовательный        & 0.0054642        & -         \\
+MPI        & 0.0029603        & 1.84          \\
+\hline
+\end{tabular}
+\caption{Результаты экспериментов}
+\end{table}
+
+\newpage
+
+% Заключение
+\section*{Заключение}
+\addcontentsline{toc}{section}{Заключение}
+Таким образом, в рамках данной лабораторной работы были разработаны последовательный и параллельный алгоритмы поразрядной сортировки подсчетом со слиянием Бэтчера. Проведенные тесты показали корректность реализованной программы, а проведенные эксперименты доказали эффективность распараллеливания этого алгоритма.
+\newpage
+
+% Литература
+\section*{Литература}
+\addcontentsline{toc}{section}{Литература}
+\begin{enumerate}
+\item IFMO - Электронный ресурс. URL: \newline \url{http://aco.ifmo.ru/el_books/numerical_methods/lectures/glava2_1.html}
+\item Habr - Электронный ресурс. URL: \newline \url{https://habr.com/ru/post/479202/}
+\item Educative - Электронный ресурс. URL: \newline \url{https://www.educative.io/blog/modern-multithreading-and-concurrency-in-cpp}
+\item А.В. Сысоев, И.Б. Мееров, А.А. Сиднев «Средства разработки параллельных программ для систем с общей памятью. Библиотека Intel Threading Building Blocks». Нижний Новгород, 2007, 128 с. 
+\item А.В. Сысоев, И.Б. Мееров, А.Н. Свистунов, А.Л. Курылев, А.В. Сенин, А.В. Шишков, К.В. Корняков, А.А. Сиднев «Параллельное программирование в системах с общей
+памятью. Инструментальная поддержка». Нижний Новгород, 2007, 110 с. 
+\end{enumerate}
+
+
+\newpage
+
+\section*{Приложение}
+\addcontentsline{toc}{section}{Приложение}
+
+\begin{lstlisting}[language=C++]
+// Copyright 2023 Derun Andrew
+#ifndef TASKS_TASK_3_DERUN_A_RADIX_BATCHER_RADIX_BATCHER_H_
+#define TASKS_TASK_3_DERUN_A_RADIX_BATCHER_RADIX_BATCHER_H_
+
+#include <cstdint>
+#include <cstring>
+#include <utility>
+#include <vector>
+
+std::vector<double> getRandomVector(int sz);
+void oddEvenMerge(std::vector<double> *arr, int n, int lo = 0, int r = 1);
+std::vector<double> RadixSortParallel(std::vector<double> arr, int size);
+std::vector<double> merge(std::vector<std::vector<double>> vectorOfVal);
+
+template <class T>
+void createCounters(T *data, uint64_t *counters, uint64_t N) {
+  memset(counters, 0, 256 * sizeof(T) * sizeof(uint64_t));
+
+  uint8_t *bp = reinterpret_cast<uint8_t *>(data);
+  uint8_t *dataEnd = reinterpret_cast<uint8_t *>(data + N);
+  uint16_t i;
+
+  while (bp != dataEnd) {
+    for (i = 0; i < sizeof(T); i++) counters[256 * i + *bp++]++;
+  }
+}
+
+template <class T>
+void radixPass(uint16_t Offset, uint64_t N, T *source, T *dest,
+               uint64_t *count) {
+  T *sp;
+  uint64_t s, c, i, *cp;
+  uint8_t *bp;
+
+  s = 0;
+  cp = count;
+  for (i = 256; i > 0; --i, ++cp) {
+    c = *cp;
+    *cp = s;
+    s += c;
+  }
+
+  bp = reinterpret_cast<uint8_t *>(source) + Offset;
+  sp = source;
+  for (i = N; i > 0; --i, bp += sizeof(T), ++sp) {
+    cp = count + *bp;
+    dest[*cp] = *sp;
+    ++(*cp);
+  }
+}
+
+template <class T>
+void floatRadixLastPass(uint16_t Offset, uint64_t N, T *source, T *dest,
+                        uint64_t *count) {
+  T *sp;
+  uint64_t s, c, i, *cp;
+  uint8_t *bp;
+
+  uint64_t numNeg = 0;
+  for (i = 128; i < 256; i++) numNeg += count[i];
+
+  s = numNeg;
+  cp = count;
+  for (i = 0; i < 128; ++i, ++cp) {
+    c = *cp;
+    *cp = s;
+    s += c;
+  }
+
+  s = count[255] = 0;
+  cp = count + 254;
+  for (i = 254; i >= 128; --i, --cp) {
+    *cp += s;
+    s = *cp;
+  }
+
+  bp = reinterpret_cast<uint8_t *>(source) + Offset;
+  sp = source;
+  for (i = N; i > 0; --i, bp += sizeof(T), ++sp) {
+    cp = count + *bp;
+    if (*bp < 128)
+      dest[(*cp)++] = *sp;
+    else
+      dest[--(*cp)] = *sp;
+  }
+}
+
+template <class T>
+void floatRadixSort(T **in, uint64_t N) {
+  T *out = new T[N];
+  uint16_t i;
+
+  uint64_t *counters = new uint64_t[sizeof(T) * 256], *count;
+  createCounters((*in), counters, N);
+
+  for (i = 0; i < sizeof(T) - 1; i++) {
+    count = counters + 256 * i;
+    if (count[0] == N) continue;
+    radixPass(i, N, (*in), out, count);
+    std::swap((*in), out);
+  }
+  count = counters + 256 * i;
+  floatRadixLastPass(i, N, (*in), out, count);
+
+  delete (*in);
+  (*in) = out;
+  delete[] counters;
+}
+
+#endif  // TASKS_TASK_3_DERUN_A_RADIX_BATCHER_RADIX_BATCHER_H_
+\end{lstlisting}
+
+\begin{lstlisting}[language=C++]
+// Copyright 2023 Derun Andrew
+#include "task_3/derun_a_radix_batcher/radix_batcher.h"
+
+#include <mpi.h>
+
+#include <algorithm>
+#include <cmath>
+#include <ctime>
+#include <random>
+#include <utility>
+#include <vector>
+
+std::vector<double> getRandomVector(const int size) {
+  std::mt19937 gen(time(0));
+  std::uniform_real_distribution<> urd(0, 300);
+  std::vector<double> vector(size);
+  for (double& value : vector) value = urd(gen);
+
+  return vector;
+}
+
+void oddEvenMerge(std::vector<double>* arr, int n, int lo, int r) {
+  int m = r * 2;
+
+  if (m < n) {
+    oddEvenMerge(arr, n, lo, m);
+    oddEvenMerge(arr, n, lo + r, m);
+
+    for (int i = lo + r; i + r < lo + n; i += m) {
+      if ((*arr)[i] > (*arr)[i + r]) std::swap((*arr)[i], (*arr)[i + r]);
+    }
+  } else {
+    if ((*arr)[lo] > (*arr)[lo + r]) {
+      std::swap((*arr)[lo], (*arr)[lo + r]);
+    }
+  }
+}
+
+std::vector<double> merge(std::vector<std::vector<double>> vector_array) {
+  while (vector_array.size() != 1) {
+    for (int i = 0; i < static_cast<int>(vector_array.size() - 1); i++) {
+      auto temp = vector_array[i];
+      temp.insert(temp.end(), vector_array[i + 1].begin(),
+                  vector_array[i + 1].end());
+      oddEvenMerge(&temp, temp.size());
+      vector_array[i] = temp;
+      vector_array.erase(vector_array.begin() + i + 1);
+    }
+  }
+  return vector_array[0];
+}
+
+std::vector<double> RadixSortParallel(std::vector<double> vec, int size) {
+  int nproc, rank;
+  MPI_Comm_size(MPI_COMM_WORLD, &nproc);
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
+  int delta = size / nproc;
+  std::vector<double> local_vec, global_vec;
+
+  local_vec.resize(delta);
+
+  MPI_Scatter(vec.data(), delta, MPI_DOUBLE, local_vec.data(), delta,
+              MPI_DOUBLE, 0, MPI_COMM_WORLD);
+  double* data = local_vec.data();
+  floatRadixSort<double>(&data, delta);
+
+  if (rank != 0) {
+    MPI_Send(local_vec.data(), delta, MPI_DOUBLE, 0, 0, MPI_COMM_WORLD);
+  } else {
+    std::vector<std::vector<double>> vec_array;
+    vec_array.push_back(local_vec);
+
+    for (int i = 1; i < nproc; ++i) {
+      MPI_Recv(local_vec.data(), delta, MPI_DOUBLE, i, 0, MPI_COMM_WORLD,
+               MPI_STATUSES_IGNORE);
+      vec_array.push_back(local_vec);
+    }
+
+    global_vec = merge(vec_array);
+  }
+
+  return global_vec;
+}
+
+\end{lstlisting}
+
+\begin{lstlisting}[language=C++]
+// Copyright 2023 Derun Andrew
+#include <gtest/gtest.h>
+#include <mpi.h>
+
+#include <cmath>
+#include <vector>
+
+#include "task_3/derun_a_radix_batcher/radix_batcher.h"
+
+TEST(RADIX_BATCHER, TEST_1) {
+  int rank, size;
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  MPI_Comm_size(MPI_COMM_WORLD, &size);
+  if (log2(size) == static_cast<int>(log2(size))) {
+    if (rank == 0) {
+      auto vec = getRandomVector(128);
+      double* data = vec.data();
+      floatRadixSort<double>(&data, 128);
+      for (int i = 0; i < static_cast<int>(vec.size()) - 1; i++) {
+        EXPECT_TRUE(vec[i] <= vec[i + 1]);
+      }
+    }
+  }
+}
+
+TEST(RADIX_BATCHER, TEST_2) {
+  int rank, size;
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  MPI_Comm_size(MPI_COMM_WORLD, &size);
+  if (log2(size) == static_cast<int>(log2(size))) {
+    std::vector<double> vec;
+    if (rank == 0) {
+      vec = getRandomVector(128);
+    }
+    vec = RadixSortParallel(vec, 128);
+    if (rank == 0) {
+      for (int i = 0; i < static_cast<int>(vec.size()) - 1; i++) {
+        EXPECT_TRUE(vec[i] <= vec[i + 1]);
+      }
+    }
+  }
+}
+
+TEST(RADIX_BATCHER, TEST_3) {
+  int rank, size;
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  MPI_Comm_size(MPI_COMM_WORLD, &size);
+  if (log2(size) == static_cast<int>(log2(size))) {
+    std::vector<double> vec;
+    if (rank == 0) {
+      vec = getRandomVector(pow(2, 8));
+    }
+    vec = RadixSortParallel(vec, pow(2, 8));
+    if (rank == 0) {
+      for (int i = 0; i < static_cast<int>(vec.size()) - 1; i++) {
+        EXPECT_TRUE(vec[i] <= vec[i + 1]);
+      }
+    }
+  }
+}
+
+TEST(RADIX_BATCHER, TEST_4) {
+  int rank, size;
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  MPI_Comm_size(MPI_COMM_WORLD, &size);
+  if (log2(size) == static_cast<int>(log2(size))) {
+    std::vector<double> vec;
+    if (rank == 0) {
+      vec = getRandomVector(pow(2, 9));
+    }
+    vec = RadixSortParallel(vec, pow(2, 9));
+    if (rank == 0) {
+      for (int i = 0; i < static_cast<int>(vec.size()) - 1; i++) {
+        EXPECT_TRUE(vec[i] <= vec[i + 1]);
+      }
+    }
+  }
+}
+
+TEST(RADIX_BATCHER, TEST_5) {
+  int rank, size;
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  MPI_Comm_size(MPI_COMM_WORLD, &size);
+  if (log2(size) == static_cast<int>(log2(size))) {
+    std::vector<double> vec, vec_s;
+    double start, end;
+    if (rank == 0) {
+      vec = getRandomVector(pow(2, 8));
+      vec_s = vec;
+    }
+    start = MPI_Wtime();
+    vec = RadixSortParallel(vec, pow(2, 8));
+    end = MPI_Wtime();
+    if (rank == 0) {
+      double stime = end - start;
+      double* data = vec_s.data();
+      start = MPI_Wtime();
+      floatRadixSort<double>(&data, pow(2, 8));
+      end = MPI_Wtime();
+      double ptime = end - start;
+      for (int i = 0; i < static_cast<int>(vec.size()); i++) {
+        EXPECT_DOUBLE_EQ(vec[i], vec_s[i]);
+        // std::cout << vec[i] << " " << vec_s[i] << std::endl;
+      }
+      std::cout << "P time " << ptime << std::endl;
+      std::cout << "S time " << stime << std::endl;
+      std::cout << "Speedup " << stime / ptime << std::endl;
+    }
+  }
+}
+
+int main(int argc, char** argv) {
+  int result_code = 0;
+
+  ::testing::InitGoogleTest(&argc, argv);
+  ::testing::TestEventListeners& listeners =
+      ::testing::UnitTest::GetInstance()->listeners();
+
+  if (MPI_Init(&argc, &argv) != MPI_SUCCESS) MPI_Abort(MPI_COMM_WORLD, -1);
+  result_code = RUN_ALL_TESTS();
+  MPI_Finalize();
+
+  return result_code;
+}
+
+\end{lstlisting}
+
+\end{document}
