@@ -1,0 +1,568 @@
+\documentclass{report}
+
+\usepackage[english, russian]{babel}
+\usepackage[pdfpagemode=UseNone,colorlinks,allcolors=black]{hyperref}
+\usepackage{tempora}
+\usepackage[12pt]{extsizes}
+\usepackage{listings}
+\usepackage{geometry}
+\usepackage{enumitem}
+\usepackage{indentfirst}
+
+\geometry{a4paper,top=2cm,bottom=2cm,left=2.5cm,right=1.5cm}
+\setlength{\parskip}{0.5cm}
+\setlist{nolistsep, itemsep=0.3cm,parsep=0pt}
+\lstset{
+    language=C++,
+    basicstyle=\footnotesize,
+    keywordstyle=\color{blue}\ttfamily,
+    stringstyle=\color{red}\ttfamily,	
+    commentstyle=\color{green}\ttfamily,
+    morecomment=[l][\color{red}]{\#},
+    tabsize=4,
+    breaklines=true,
+    breakatwhitespace=true,
+    title=\lstname,
+}
+\makeatletter
+\renewcommand\@biblabel[1]{#1.\hfil}
+\makeatother
+
+\begin{document}
+
+\begin{titlepage}
+
+\begin{center}
+Министерство науки и высшего образования Российской Федерации
+\end{center}
+
+\begin{center}
+Федеральное государственное автономное образовательное учреждение высшего образования\\Национальный исследовательский Нижегородский государственный университет им. Н.И. Лобачевского
+\end{center}
+
+\begin{center}
+Институт информационных технологий, математики и механики
+\end{center}
+
+\vspace{4em}
+
+\begin{center}
+\textbf{\LargeОтчет по лабораторной работе}\\
+\end{center}
+\begin{center}
+\textbf{\Large<<Умножение плотных матриц. Элементы типа double. Блочная схема, алгоритм Кэннона.>>}\\
+\end{center}
+
+\vspace{4em}
+
+\newbox{\lbox}
+\savebox{\lbox}{\hbox{text}}
+\newlength{\maxl}
+\setlength{\maxl}{\wd\lbox}
+\hfill\parbox{7cm}{
+\hspace*{5cm}\hspace*{-5cm}\textbf{Выполнил:}\\студент группы 3821Б1ПМоп3\\Шубин М. А.\\
+\\
+\hspace*{5cm}\hspace*{-5cm}\textbf{Проверил:}\\младший научный сотрудник\\Нестеров А. Ю.\\
+}
+\vspace{\fill}
+
+\begin{center}Нижний Новгород\\2023\end{center}
+
+\end{titlepage}
+
+\setcounter{page}{2}
+
+\tableofcontents
+\newpage
+
+\section*{Введение}
+\addcontentsline{toc}{section}{Введение}
+\par Умножение матриц является одной из ключевых операций в области математических вычислений. Поскольку на больших размерах матриц даже самые оптимальные алгоритмы показывают не лучшую производительность, разделение вычислений между несколькими вычислительными узлами является логичным шагом для сокращения времени вычислений. Одним из алгоритмов параллельного умножения матриц является алгоритм Кэннона.
+\par Цель работы состоит в реализации алгоритма Кэннона на основе MPI. Для проверки корректности работы также будет необходимо реализовать последовательный алгоритм умножения матриц.
+\newpage
+
+\section*{Постановка задачи}
+\addcontentsline{toc}{section}{Постановка задачи}
+\par В рамках данной работы требуется выполнить следующие задачи:
+\begin{enumerate}
+    \item Реализовать алгоритм Кэннона параллельного умножения матриц.
+    \item Реализовать последовательный алгоритм умножения матриц.
+    \item Сравнить время работы алгоритма Кэннона и последовательного алгоритма.
+    \item Сделать выводы по полученным данным.
+\end{enumerate}
+\newpage
+
+\section*{Описание алгоритма}
+\addcontentsline{toc}{section}{Описание алгоритма}
+\par Алгоритм Кэннона требует того, чтобы количество работающих потоков было квадратом натурального числа. Для того, чтобы алгоритм работал на любом количестве процессов, сделаем требование более мягким: количество работающих потоков должно быть больше либо равно квадрату натурального числа. Все <<излишние>> процессы просто не будут проводить настоящих вычислений. Сам алгоритм на квадратной сетке из активных потоков для квадратных матриц заключается в следующем:
+\begin{enumerate}
+    \item Две входные матрицы разделяются между активными процессами.
+    \item Полученные матрицы перемножаются, результат вычисления сохраняется.
+    \item Каждый процесс отправляет имеющиеся матрицы другим процессам в сетке: первая матрица - влево, вторая - вверх.
+    \item Пока количество повторов не превосходит корня количества активных потоков, действия 2. и 3. повторяются.
+    \item После последнего повтора главный процесс собирает сохранённые результирующие матрицы и составляет из них итоговую матрицу.
+\end{enumerate}
+\par Из-за ошибок в вычислении чисел с плавающей точкой полученные результаты <<округляются>> до определённого знака после запятой.
+\newpage
+
+\section*{Описание программной реализации}
+\addcontentsline{toc}{section}{Описание программной реализации}
+\par Программа состоит из файлов: \emph{cannon\_algorithm.h}, \emph{cannon\_algorithm.cpp} и \emph{main.cpp}. Оба файла \emph{cannon\_algorithm} содержат функции. Файл \emph{main.cpp} содержит тесты.
+\subsection*{Функция round\_double} 
+\par Функция принимает в качестве параметров число с плавающей точкой и количество знаков после запятой, которые необходимо оставить. Функция возвращает то же число с удалёнными <<лишними>> знаками после запятой.
+\subsection*{Функция mat\_mult\_cons}
+\par Функция принимает в качестве параметров размер матриц, две ссылки на исходные матрицы и указатель на матрицу, в которую будет производиться запись. Функция не возвращает значений, напрямую записывая результат последовательного умножения в матрицу по указателю.
+\subsection*{Функция mat\_mult\_cannon}
+\par Функция принимает в качестве параметров размер матриц, две ссылки на исходные матрицы и указатель на матрицу, в которую будет производиться запись. Функция не возвращает значений, напрямую записывая результат умножения алгоритмом Кэннона в матрицу по указателю.
+\newpage
+
+\section*{Подтверждение корректности}
+\addcontentsline{toc}{section}{Подтверждение корректности}
+\par Для подтверждения корректности работы алгоритма в Google Test были написаны 5 тестов, сравнивающих результаты последовательного и параллельного умножений матриц. Тесты различаются тем, какие матрицы умножаются. Сравнение производится до 6 знака после запятой.
+\par Проведённые тесты:
+\begin{enumerate}
+    \item Умножение единичной матрицы на ненулевую - Пройден.
+    \item Умножение нулевой матрицы на ненулевую - Пройден.
+    \item Умножение ненулевой матрицы саму на себя - Пройден.
+    \item Умножение матрицы из положительных элементов на другую матрицу из положительных элементов - Пройден.
+    \item Умножение случайной матрицы на другую случайную матрицу - Пройден.
+\end{enumerate}
+\newpage
+
+\section*{Результаты экспериментов}
+\addcontentsline{toc}{section}{Результаты экспериментов}
+\par В процессе проведения экспериментов использована система, параметры которой приведены ниже:
+\begin{itemize}
+\item Процессор: Intel Core i5-9300H;
+\item Оперативная память: 16.0 ГБ;
+\item Операционная система: Windows 11.
+\end{itemize}
+\par Результаты экспериментов (Матрицы 100x100, 4 процесса):
+\begin{table}[!h]
+\centering
+\begin{tabular}{| c | c |}
+\hline
+Версия & Время работы (сек.)\\
+\hline
+Последовательный&0.0035478\\
+Алгоритм Кэннона&0.0008606\\
+\hline
+\end{tabular}
+\caption{Результаты экспериментов, 4 процесса}
+\end{table}
+\par Ускорение:  \(\sim \)4 раза
+\par Результаты экспериментов (Матрицы 100x100, 16 процессов):
+\begin{table}[!h]
+\centering
+\begin{tabular}{| c | c |}
+\hline
+Версия & Время работы (сек.)\\
+\hline
+Последовательный&0.0095621\\
+Алгоритм Кэннона&0.0008617\\
+\hline
+\end{tabular}
+\caption{Результаты экспериментов, 16 процессов}
+\end{table}
+\par Ускорение:  \(\sim \)11 раз
+\par Результаты экспериментов (Матрицы 100x100, 81 процесс):
+\begin{table}[!h]
+\centering
+\begin{tabular}{| c | c |}
+\hline
+Версия & Время работы (сек.)\\
+\hline
+Последовательный&0.0502582\\
+Алгоритм Кэннона&0.0012964\\
+\hline
+\end{tabular}
+\caption{Результаты экспериментов, 81 процесс}
+\end{table}
+\par Ускорение:  \(\sim \)39 раз
+\par Как можно увидеть, увеличение количества активных процессов приводит к увеличению ускорения. Стоит отметить, что данныые результаты не являются полностью объективными из-за того, как происходят вычисления на компьютере.
+\newpage
+
+\section*{Заключение}
+\addcontentsline{toc}{section}{Заключение}
+В ходе данной лабораторной работы был реализован алгоритм Кэннона. Проведенные тесты показали корректность реализованной программы, а проведенные эксперименты доказали эффективность этого алгоритма по сравнению с последовательным алгоритмом.
+\newpage
+
+\section*{Литература}
+\addcontentsline{toc}{section}{Литература}
+\begin{enumerate}
+\item А.В. Сысоев, И.Б. Мееров, А.А. Сиднев «Средства разработки параллельных программ для систем с общей памятью. Библиотека Intel Threading Building Blocks». Нижний Новгород, 2007, 128 с. 
+\item А.В. Сысоев, И.Б. Мееров, А.Н. Свистунов, А.Л. Курылев, А.В. Сенин, А.В. Шишков, К.В. Корняков, А.А. Сиднев «Параллельное программирование в системах с общей
+памятью. Инструментальная поддержка». Нижний Новгород, 2007, 110 с. 
+\item Электронный ресурс http://www.hpcc.unn.ru/?dir=987
+\end{enumerate}
+\newpage
+
+\section*{Приложение 1. cannon\_algorithm.h}
+\addcontentsline{toc}{section}{Приложение 1. сannon\_algorithm.h}
+\begin{lstlisting}[language=C++]
+// Copyright 2023 Shubin Mikhail
+#ifndef TASKS_TASK_3_SHUBIN_M_CANNON_ALGORITHM_CANNON_ALGORITHM_H_
+#define TASKS_TASK_3_SHUBIN_M_CANNON_ALGORITHM_CANNON_ALGORITHM_H_
+
+#include <mpi.h>
+#include <cmath>
+#include <vector>
+
+double round_double(double val, int zeros);
+
+void mat_mult_cons(int n, const std::vector<double>& mat_in_1,
+    const std::vector<double>& mat_in_2, std::vector<double>* mat_out);
+void mat_mult_cannon(int n, const std::vector<double>& mat_in_1,
+    const std::vector<double>& mat_in_2, std::vector<double>* mat_out);
+
+#endif  // TASKS_TASK_3_SHUBIN_M_CANNON_ALGORITHM_CANNON_ALGORITHM_H_
+\end{lstlisting}
+\newpage
+
+\section*{Приложение 2. cannon\_algorithm.cpp}
+\addcontentsline{toc}{section}{Приложение 2. cannon\_algorithm.cpp}
+\begin{lstlisting}[language=C++]
+// Copyright 2023 Shubin Mikhail
+#include "task_3/shubin_m_cannon_algorithm/cannon_algorithm.h"
+
+double round_double(double val, int zeros) {
+  return (static_cast<int>(val * pow(10, zeros)))/pow(10, zeros);
+}
+
+void mat_mult_cons(int n, const std::vector<double>& mat_in_1,
+    const std::vector<double>& mat_in_2, std::vector<double>* mat_out) {
+  for (int i = 0; i < n; i++) {
+    for (int j = 0; j < n; j++) {
+      for (int k = 0; k < n; k++) {
+        (*mat_out)[i*n+j] += mat_in_1[i*n+k] * mat_in_2[k*n+j];
+      }
+    }
+  }
+}
+
+void mat_mult_cannon(int n, const std::vector<double>& mat_in_1,
+    const std::vector<double>& mat_in_2, std::vector<double>* mat_out) {
+  int ProcRank, ProcNum;
+  MPI_Comm_size(MPI_COMM_WORLD, &ProcNum);
+  MPI_Comm_rank(MPI_COMM_WORLD, &ProcRank);
+  int ProcNum_sqrt = static_cast<int>(sqrt(ProcNum));
+
+  int n_ext = n % ProcNum_sqrt == 0 ? n : n + (ProcNum_sqrt - n % ProcNum_sqrt);
+
+  std::vector<int> mat_size(ProcNum);
+  std::vector<int> mat_displs(ProcNum);
+  for (int i = 0; i < ProcNum; i++) {
+    mat_size[i] = i < ProcNum_sqrt * ProcNum_sqrt ? (n_ext / ProcNum_sqrt) *
+      (n_ext / ProcNum_sqrt) : 0;
+  }
+  mat_displs[0] = 0;
+  for (int i = 1; i < ProcNum; i++) {
+    mat_displs[i] = mat_size[i-1] + mat_displs[i-1];
+  }
+  int n_loc = static_cast<int>(sqrt(mat_size[ProcRank]));
+
+  std::vector<double> loc_mat_1(mat_size[ProcRank]),
+                      loc_mat_2(mat_size[ProcRank]),
+                      t_mat_1(n_ext * n_ext),
+                      t_mat_2(n_ext * n_ext),
+                      res_loc(mat_size[ProcRank]),
+                      res_glob(n_ext * n_ext);
+
+  if (ProcRank == 0) {
+    for (int row = 0; row < ProcNum_sqrt; row++) {
+      for (int col = 0; col < ProcNum_sqrt; col++) {
+        for (int i = 0; i < n_loc; i++) {
+          for (int j = 0; j < n_loc; j++) {
+            int k = (row + col) % ProcNum_sqrt,
+                new_ind = (row * ProcNum_sqrt + col) * n_loc *
+                  n_loc + (i * n_loc + j);
+
+            if (row * n_loc + i < n && k * n_loc + j < n) {
+              t_mat_1[new_ind] = mat_in_1[(row*n_loc+i)*n+(k*n_loc+j)];
+            } else {
+              t_mat_1[new_ind] = 0.0;
+            }
+
+            if (k * n_loc + i < n && col * n_loc + j < n) {
+              t_mat_2[new_ind] = mat_in_2[(k*n_loc+i)*n+(col*n_loc+j)];
+            } else {
+              t_mat_2[new_ind] = 0.0;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  MPI_Scatterv(t_mat_1.data(), mat_size.data(), mat_displs.data(), MPI_DOUBLE,
+               loc_mat_1.data(), mat_size[ProcRank], MPI_DOUBLE,
+               0, MPI_COMM_WORLD);
+  MPI_Scatterv(t_mat_2.data(), mat_size.data(), mat_displs.data(), MPI_DOUBLE,
+               loc_mat_2.data(), mat_size[ProcRank], MPI_DOUBLE,
+               0, MPI_COMM_WORLD);
+
+  if (mat_size[ProcRank] != 0) {
+    for (int q = 0; q < ProcNum_sqrt; q++) {
+      mat_mult_cons(n_loc, loc_mat_1, loc_mat_2, &res_loc);
+      if (q != ProcNum_sqrt - 1) {
+        int ProcRow = ProcRank / ProcNum_sqrt,
+            ProcCol = ProcRank % ProcNum_sqrt,
+            send_trgt_1 = ProcRow * ProcNum_sqrt + (ProcCol - 1 +
+                          ProcNum_sqrt) % ProcNum_sqrt,
+            recv_src_1 = ProcRow * ProcNum_sqrt + (ProcCol + 1) % ProcNum_sqrt,
+            send_trgt_2 = (ProcRow - 1 + ProcNum_sqrt) % ProcNum_sqrt *
+                          ProcNum_sqrt + ProcCol,
+            recv_src_2 = (ProcRow + 1) % ProcNum_sqrt * ProcNum_sqrt + ProcCol;
+
+        MPI_Send(loc_mat_1.data(), mat_size[ProcRank], MPI_DOUBLE, send_trgt_1,
+                 0, MPI_COMM_WORLD);
+        MPI_Recv(loc_mat_1.data(), mat_size[ProcRank], MPI_DOUBLE, recv_src_1,
+                 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+
+        MPI_Send(loc_mat_2.data(), mat_size[ProcRank], MPI_DOUBLE, send_trgt_2,
+                 1, MPI_COMM_WORLD);
+        MPI_Recv(loc_mat_2.data(), mat_size[ProcRank], MPI_DOUBLE, recv_src_2,
+                 1, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+      }
+    }
+  }
+
+  MPI_Gatherv(res_loc.data(), mat_size[ProcRank], MPI_DOUBLE,
+              res_glob.data(), mat_size.data(), mat_displs.data(), MPI_DOUBLE,
+              0, MPI_COMM_WORLD);
+
+  if (ProcRank == 0) {
+    for (int row = 0; row < ProcNum_sqrt; row++) {
+      for (int col = 0; col < ProcNum_sqrt; col++) {
+        for (int i = 0; i < n_ext / ProcNum_sqrt; i++) {
+          for (int j = 0; j < n_ext / ProcNum_sqrt; j++) {
+            int new_col = col * n_loc + j,
+                new_row = row * n_loc + i,
+                old_ind = (row * ProcNum_sqrt + col) *
+                           n_loc * n_loc + (i * n_loc + j);
+
+            if (new_row < n && new_col < n) {
+              (*mat_out)[new_row*n+new_col] = res_glob[old_ind];
+            }
+          }
+        }
+      }
+    }
+  }
+
+  MPI_Barrier(MPI_COMM_WORLD);
+}
+\end{lstlisting}
+\newpage
+
+\section*{Приложение 3. main.cpp}
+\addcontentsline{toc}{section}{Приложение 3. main.cpp}
+\begin{lstlisting}[language=C++]
+// Copyright 2023 Shubin Mikhail
+#include <gtest/gtest.h>
+#include <random>
+#include "./cannon_algorithm.h"
+
+TEST(Cannon_Algorithm, Test_identity_mat_mult_normal_mat) {
+  int ProcRank, ProcNum;
+  MPI_Comm_size(MPI_COMM_WORLD, &ProcNum);
+  MPI_Comm_rank(MPI_COMM_WORLD, &ProcRank);
+
+  int N = 7;
+  std::vector<double> A(N * N);
+  std::vector<double> B(N * N);
+  std::vector<double> C(N * N);
+
+  if (ProcRank == 0) {
+    for (int i = 0; i < N; i++) {
+      for (int j = 0; j < N; j++) {
+        A[i*N+j] = i * j;
+        if (i == j) {
+          B[i*N+j] = 1;
+        } else {
+          B[i*N+j] = 0;
+        }
+      }
+    }
+  }
+
+  mat_mult_cannon(N, A, B, &C);
+  if (ProcRank == 0) {
+    for (int i = 0; i < N; i++) {
+      for (int j = 0; j < N; j++) {
+        C[i*N+j] = round_double(C[i*N+j], 6);
+      }
+    }
+  }
+
+  if (ProcRank == 0) {
+    ASSERT_EQ(A, C);
+  }
+}
+
+TEST(Cannon_Algorithm, Test_zero_mat_mult_normal_mat) {
+  int ProcRank, ProcNum;
+  MPI_Comm_size(MPI_COMM_WORLD, &ProcNum);
+  MPI_Comm_rank(MPI_COMM_WORLD, &ProcRank);
+
+  int N = 7;
+  std::vector<double> A(N * N);
+  std::vector<double> B(N * N);
+  std::vector<double> C(N * N);
+
+  if (ProcRank == 0) {
+    for (int i = 0; i < N; i++) {
+      for (int j = 0; j < N; j++) {
+        A[i*N+j] = i * j;
+        B[i*N+j] = 0;
+      }
+    }
+  }
+
+  mat_mult_cannon(N, A, B, &C);
+  if (ProcRank == 0) {
+    for (int i = 0; i < N; i++) {
+      for (int j = 0; j < N; j++) {
+        C[i*N+j] = round_double(C[i*N+j], 6);
+      }
+    }
+  }
+
+  if (ProcRank == 0) {
+    ASSERT_EQ(B, C);
+  }
+}
+
+
+TEST(Cannon_Algorithm, Test_mat_mult_on_itself) {
+  int ProcRank, ProcNum;
+  MPI_Comm_size(MPI_COMM_WORLD, &ProcNum);
+  MPI_Comm_rank(MPI_COMM_WORLD, &ProcRank);
+
+  int N = 7;
+  std::vector<double> A(N * N);
+  std::vector<double> B(N * N);
+  std::vector<double> C_cons(N * N);
+  std::vector<double> C_parr(N * N);
+
+  if (ProcRank == 0) {
+    for (int i = 0; i < N; i++) {
+      for (int j = 0; j < N; j++) {
+        A[i*N+j] = i * j;
+        B[i*N+j] = i * j;
+      }
+    }
+  }
+
+  mat_mult_cons(N, A, B, &C_cons);
+  mat_mult_cannon(N, A, B, &C_parr);
+  if (ProcRank == 0) {
+    for (int i = 0; i < N; i++) {
+      for (int j = 0; j < N; j++) {
+        C_cons[i*N+j] = round_double(C_cons[i*N+j], 6);
+        C_parr[i*N+j] = round_double(C_parr[i*N+j], 6);
+      }
+    }
+  }
+
+  if (ProcRank == 0) {
+    ASSERT_EQ(C_cons, C_parr);
+  }
+}
+
+TEST(Cannon_Algorithm, Test_positive_mats_mult) {
+  std::random_device dev;
+  std::mt19937 gen(dev());
+  std::uniform_real_distribution<> distrib(0.0, 100.0);
+
+  int ProcRank, ProcNum;
+  MPI_Comm_size(MPI_COMM_WORLD, &ProcNum);
+  MPI_Comm_rank(MPI_COMM_WORLD, &ProcRank);
+
+  int N = 7;
+  std::vector<double> A(N * N);
+  std::vector<double> B(N * N);
+  std::vector<double> C_cons(N * N);
+  std::vector<double> C_parr(N * N);
+
+  if (ProcRank == 0) {
+    for (int i = 0; i < N; i++) {
+      for (int j = 0; j < N; j++) {
+        A[i*N+j] = distrib(gen);
+        B[i*N+j] = distrib(gen);
+      }
+    }
+  }
+
+  mat_mult_cons(N, A, B, &C_cons);
+  mat_mult_cannon(N, A, B, &C_parr);
+  if (ProcRank == 0) {
+    for (int i = 0; i < N; i++) {
+      for (int j = 0; j < N; j++) {
+        C_cons[i*N+j] = round_double(C_cons[i*N+j], 6);
+        C_parr[i*N+j] = round_double(C_parr[i*N+j], 6);
+      }
+    }
+  }
+
+  if (ProcRank == 0) {
+    ASSERT_EQ(C_cons, C_parr);
+  }
+}
+
+TEST(Cannon_Algorithm, Test_rand_mats_mult) {
+  std::random_device dev;
+  std::mt19937 gen(dev());
+  std::uniform_real_distribution<> distrib(-100.0, 100.0);
+
+  int ProcRank, ProcNum;
+  MPI_Comm_size(MPI_COMM_WORLD, &ProcNum);
+  MPI_Comm_rank(MPI_COMM_WORLD, &ProcRank);
+
+  int N = 7;
+  std::vector<double> A(N * N);
+  std::vector<double> B(N * N);
+  std::vector<double> C_cons(N * N);
+  std::vector<double> C_parr(N * N);
+
+  if (ProcRank == 0) {
+    for (int i = 0; i < N; i++) {
+      for (int j = 0; j < N; j++) {
+        A[i*N+j] = distrib(gen);
+        B[i*N+j] = distrib(gen);
+      }
+    }
+  }
+
+  mat_mult_cons(N, A, B, &C_cons);
+  mat_mult_cannon(N, A, B, &C_parr);
+  if (ProcRank == 0) {
+    for (int i = 0; i < N; i++) {
+      for (int j = 0; j < N; j++) {
+        C_cons[i*N+j] = round_double(C_cons[i*N+j], 6);
+        C_parr[i*N+j] = round_double(C_parr[i*N+j], 6);
+      }
+    }
+  }
+
+  if (ProcRank == 0) {
+    ASSERT_EQ(C_cons, C_parr);
+  }
+}
+
+int main(int argc, char** argv) {
+    int resultCode = 0;
+    ::testing::InitGoogleTest(&argc, argv);
+    ::testing::TestEventListeners& listeners =
+        ::testing::UnitTest::GetInstance()->listeners();
+
+    if (MPI_Init(&argc, &argv) != MPI_SUCCESS)
+        MPI_Abort(MPI_COMM_WORLD, -1);
+    resultCode = RUN_ALL_TESTS();
+    MPI_Finalize();
+
+    return resultCode;
+}
+\end{lstlisting}
+
+\end{document}
