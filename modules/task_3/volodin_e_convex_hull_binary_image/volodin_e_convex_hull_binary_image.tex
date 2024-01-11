@@ -7,10 +7,9 @@
 \usepackage[T2A]{fontenc}
 \usepackage[utf8]{inputenc}
 
-% Настройка шрифтов
-\usepackage{fontspec}
-\setmainfont[Ligatures=TeX]{Times New Roman} % Шрифт основного текста
-\setmonofont{Consolas} % Шрифт кода
+\usepackage[dvipsnames]{xcolor}
+\usepackage{listings}
+\usepackage{xcolor}
 
 % Настройка отступов от краев страницы
 \usepackage[left=3cm, right=1.5cm, top=2cm, bottom=2cm]{geometry}
@@ -41,13 +40,35 @@
 
 \usepackage{nicematrix} % Особые матрицы (Гауссовские)
 
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+
+\lstdefinestyle{mystyle}{
+	backgroundcolor=\color{backcolour},   
+	commentstyle=\color{codegreen},
+	keywordstyle=\color{magenta},
+	numberstyle=\tiny\color{codegray},
+	stringstyle=\color{codepurple},
+	basicstyle=\ttfamily\footnotesize,
+	breakatwhitespace=false,         
+	breaklines=true,                 
+	captionpos=b,                    
+	keepspaces=true,                 
+	numbers=left,                    
+	numbersep=5pt,                  
+	showspaces=false,                
+	showstringspaces=false,
+	showtabs=false,                  
+	tabsize=2
+}
+
+\lstset{style=mystyle}
+
 \linespread{1.5} % Межстрочный интервал
 \setlength{\parindent}{1.25cm} % Табуляция
 \setlength{\parskip}{0cm}
-
-% Пакет для красивого выделения кода
-\usepackage{minted}
-\setminted{fontsize=\footnotesize}
 
 % Добавляем гипертекстовое оглавление в PDF
 \usepackage[
@@ -121,7 +142,6 @@ citecolor=black, menucolor=black, filecolor=black,
 				\vspace{14pt}
 				\textbf{«\LabName»}\n
 				\vspace{56pt}
-				
 			}
 		\end{center}
 		\hfill
@@ -176,11 +196,11 @@ citecolor=black, menucolor=black, filecolor=black,
 		\item выбираем точку из массива с минимальной $x$-координатой (если таких несколько, берем самую верхнюю из них), добавляем ее в ответ;
 		\item упорядочиваем оставшиеся точки по углу, который они образуют с выбранной точкой;
 		\item добавляем в ответ $p_1$ - первую точку из упорядоченного списка;
-		\item берем следующую точку $k$, и пока $k$ и две предыдущие точки в текущей оболочке ($p_i$ и $p_{i−1}$) образуют векторы ($p_i$$k$ и $p_i$$p_{i−1}$), которые лежат не по часовой стрелке, исключаем из оболочки $p_i$;
+		\item берем следующую точку $k$, и пока $k$ и две предыдущие точки в текущей оболочке ($p_i$ и $p_{i-1}$) образуют векторы ($p_i$$k$ и $p_i$$p_{i-1}$), которые лежат не по часовой стрелке, исключаем из оболочки $p_i$;
 		\item добавляем в оболочку точку $k$;
 		\item повторяем пункты 4-5, пока есть точки.
 	\end{enumerate}
-	\begin{figure}[H]
+	\begin{figure}[h]
 		\centering
 		\includegraphics[width=\linewidth]{img/graham}
 		\caption{Алгоритм Грэхема в действии. Красные точки образуют левый поворот и удаляются из оболочки.}
@@ -196,61 +216,61 @@ citecolor=black, menucolor=black, filecolor=black,
 	В заголовочном файле определены функции, реализующие последовательный и параллельный подходы для нахождения выпуклой оболочки произвольного множества точек, а также вспомогательные функции: для выделения компонент изображения, для подсчета количества компонент, для сокращения числа точек, генерации примеров и другие.
 	
 	\subsection{Функции для выделения компонент изображения}
-	\begin{minted}[breaklines, breakafter=d]{cpp}
+	\begin{lstlisting}[language=C++]
 		std::vector<int> findComponents(const std::vector<std::vector<int>>& image, int width, int height);
-	\end{minted}
+	\end{lstlisting}
 	Функция $findComponents$ является не более чем общим интерфейсом. Она принимает на вход исходное изображение в виде двумерного вектора, его высоту и ширину. Весь процесс выполнения данной функции связан с вызовом для каждого пикселя процедуры $floodFill$. На выходе функция $findComponents$ возвращает промаркированное изображение в виде вектора.
-	\begin{minted}[breaklines, breakafter=d]{cpp}
+	\begin{lstlisting}[language=C++]
 		void floodFill(std::vector<int>* image, int height, int width, int yStart, int xStart, int label);
-	\end{minted}
+	\end{lstlisting}
 	Процедура $floodFill$ выполняет основную работу, а именно принимает на вход изображение в виде указателя на вектор, его высоту и ширину, точку старта, с которой необходимо начать маркировку и метку, которая присваивается данной компоненте. Данная функция ничего не возвращает, так как изменяет изображение, переданное ей в качестве аргумента.
 	
 	\subsection{Функции подсчета}
-	\begin{minted}[breaklines, breakafter=d]{cpp}
+	\begin{lstlisting}[language=C++]
 		int findCountComponents(const std::vector<int> &image);
-	\end{minted}
+	\end{lstlisting}
 	Функция $findCountComponents$ используется для подсчета числа компонент в изображении. На вход принимается изображение в виде ссылки на вектор, а на выходе выдается число компонент в нем. Работает по принципу поиска компоненты с наибольшим номером метки.
-	\begin{minted}[breaklines, breakafter=d]{cpp}
+	\begin{lstlisting}[language=C++]
 		int findCountPointsInComponent(const std::vector<int> &image);
-	\end{minted}
+	\end{lstlisting}
 	Функция $findCountPointsInComponent$ используется для подсчета числа точек в компоненте. На вход принимается компонента (в виде части изображения), а на выходе выдается число точек в ней. Работает по принципу подсчета ненулевых пикселей.
 	
 	\subsection{Функция удаления лишний точек компоненты}
-	\begin{minted}[breaklines, breakafter=d]{cpp}
+	\begin{lstlisting}[language=C++]
 		std::vector<int> removeExtraPoints(const std::vector<int> &image, int width, int height, int component);
-	\end{minted}
+	\end{lstlisting}
 	Функция $removeExtraPoints$ принимает на вход изображение в виде ссылки на вектор, его высоту и ширину, а также номер компоненты, которую необходимо оставить. На выходе получаем изображение в виде вектора, в котором число компонент уменьшено до минимума, что позволяет быстрее строить выпуклую оболочку.
 	
 	\subsection{Функция алгоритма Грэхема}
-	\begin{minted}[breaklines, breakafter=d]{cpp}
+	\begin{lstlisting}[language=C++]
 		void sort(std::vector<int>* points, int xMin, int yMin);
-	\end{minted}
+	\end{lstlisting}
 	Функция $sort$ является вспомогательной. Она сортирует точки в процессе работы алгоритма Грэхема. На вход функции подается вектор точек, а также координаты точки, относительно которой нужно выполнить сортировку. На выходе получаем отсортированный по нужному правилу вектор.
-	\begin{minted}[breaklines, breakafter=d]{cpp}
+	\begin{lstlisting}[language=C++]
 		int cross(int x1, int y1, int x2, int y2, int x3, int y3);
-	\end{minted}
+	\end{lstlisting}
 	Функция $cross$ также является вспомогательной. С помощью нее определяется векторное произведение. На вход подаются координаты точек, а на выходе получаем их векторное произведение.
-	\begin{minted}[breaklines, breakafter=d]{cpp}
+	\begin{lstlisting}[language=C++]
 		std::vector<int> graham(std::vector<int> points);
-	\end{minted}
+	\end{lstlisting}
 	Функция $graham$ является основной, поскольку реализует алгоритм Грэхема. Она принимает на вход вектор точек. На выходе данная функция возвращает вектор точек, входящих в выпуклую оболочку.
 	
 	\subsection{Функция, реализующая последовательный подход}
-	\begin{minted}[breaklines, breakafter=d]{cpp}
+	\begin{lstlisting}[language=C++]
 		std::vector<int> getConvexHullSeq(const std::vector<std::vector<int>> &image, int width, int height);
-	\end{minted}
+	\end{lstlisting}
 	Данная функция принимает на вход изображение в виде ссылки на вектор, его высоту и ширину. В процессе выполнения функции находятся его компоненты, и для каждой из них строится выпуклая оболочка. На выходе получаем вектор точек, которые образуют выпуклые оболочки для каждой компоненты.
 	
 	\subsection{Функция, реализующая параллельную версию}
-	\begin{minted}[breaklines, breakafter=d]{cpp}
+	\begin{lstlisting}[language=C++]
 		std::vector<int> getConvexHullPar(const std::vector<std::vector<int>> &image, int width, int height);
-	\end{minted}
+	\end{lstlisting}
 	Данная функция принимает на вход изображение в виде ссылки на вектор, его высоту и ширину. В процессе выполнения функции находятся его компоненты, и для каждой из них строится выпуклая оболочка. На выходе получаем вектор точек, которые образуют выпуклые оболочки для каждой компоненты.
 	
 	\subsection{Функция заполнения изображения}
-	\begin{minted}[breaklines, breakafter=d]{cpp}
-		void fillImageRandom(std::vector<std::vector<int>>* image, int width, int height);
-	\end{minted}
+	\begin{lstlisting}[language=C++]
+	void fillImageRandom(std::vector<std::vector<int>>* image, int width, int height);
+	\end{lstlisting}
 	Функция $fillImageRandom$ заполняет изображение единицами и нулями. На вход она принимает пустое изображение в виде ссылки на двумерный вектор, его высоту и ширину. Эта функция ничего не возвращает, поскольку изменяет непосредственно принятое изображение.
 	\newpage
 	\section{Результаты экспериментов}
@@ -262,7 +282,7 @@ citecolor=black, menucolor=black, filecolor=black,
 		\item Операционная система: Windows 10
 	\end{itemize}
 	По результатам экспериментов был построен график (рис. \ref{fig:results}) зависимости числа точек в изображении от времени, которое тратит та или иная версия алгоритма на его обработку.
-	\begin{figure}[H]
+	\begin{figure}[h]
 		\centering
 		\includegraphics[width=\linewidth]{img/test.png}
 		\caption{Результаты экспериментов}
@@ -316,7 +336,7 @@ citecolor=black, menucolor=black, filecolor=black,
 	\addcontentsline{toc}{section}{Приложение}
 	\subsection*{chbi.h}
 	\addcontentsline{toc}{subsection}{chbi.h}
-\begin{minted}[breaklines, breakafter=d]{cpp}
+	\begin{lstlisting}[language=C++]
 // Copyright 2023 Volodin Evgeniy
 #ifndef TASKS_TASK_3_VOLODIN_E_CONVEX_HULL_BINARY_IMAGE_CHBI_H_
 #define TASKS_TASK_3_VOLODIN_E_CONVEX_HULL_BINARY_IMAGE_CHBI_H_
@@ -349,11 +369,11 @@ std::vector<int> getConvexHullPar(const std::vector<std::vector<int>> &image, in
 void fillImageRandom(std::vector<std::vector<int>>* image, int width, int height);
 
 #endif  // TASKS_TASK_3_VOLODIN_E_CONVEX_HULL_BINARY_IMAGE_CHBI_H_
-\end{minted}
+	\end{lstlisting}
 
 \subsection*{chbi.cpp}
 \addcontentsline{toc}{subsection}{chbi.cpp}
-\begin{minted}[breaklines, breakafter=d]{cpp}
+	\begin{lstlisting}[language=C++]
 // Copyright 2023 Volodin Evgeniy
 #include "task_3/volodin_e_convex_hull_binary_image/chbi.h"
 #include <boost/mpi/communicator.hpp>
@@ -676,11 +696,11 @@ void fillImageRandom(std::vector<std::vector<int>>* image, int width, int height
 		}
 	}
 }
-\end{minted}
+\end{lstlisting}
 
 \subsection*{main.cpp}
 \addcontentsline{toc}{subsection}{main.cpp}
-\begin{minted}[breaklines, breakafter=d]{cpp}
+	\begin{lstlisting}[language=C++]
 // Copyright 2023 Volodin Evgeniy
 #include <gtest/gtest.h>
 #include "task_3/volodin_e_convex_hull_binary_image/chbi.h"
@@ -807,5 +827,5 @@ int main(int argc, char* argv[]) {
 	RUN_ALL_TESTS();
 	return 0;
 }
-\end{minted}
+\end{lstlisting}
 \end{document}
