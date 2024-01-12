@@ -3,7 +3,6 @@
 \usepackage[english, russian]{babel}
 
 \usepackage{tocloft}
-\usepackage{minted}
 \usepackage{tabularray}
 \usepackage{hyperref}
 \usepackage[utf8]{inputenc}
@@ -15,28 +14,8 @@
 \usepackage{amsmath, amsfonts, amssymb, amsthm, mathtools}
 \usepackage{icomma}
 
-\DeclareMathOperator{\im}{Im}
-\DeclareMathOperator{\re}{Re}
-\DeclareMathOperator{\sgn}{sgn}
-
 \renewcommand{\cftsecleader}{\cftdotfill{\cftdotsep}}
-
 \newcommand{\n}{\par}
-\newcommand{\N}{\mathbb{N}}
-\newcommand{\Z}{\mathbb{Z}}
-\newcommand{\Q}{\mathbb{Q}}
-\newcommand{\R}{\mathbb{R}}
-\newcommand{\Cm}{\mathbb{C}}
-
-%%% Теоремы
-\theoremstyle{plain}
-\newtheorem{theorem}{Теорема}[section]
-\newtheorem{lemma}{Лемма}[section]
-\newtheorem{proposition}{Утверждение}[section]
-\newtheorem*{exercise}{Упражнение}
-\newtheorem*{problem}{Задача}
-
-\newtheorem*{solution}{Решение}
 
 %%% Оформление страницы
 \usepackage{extsizes}     % Возможность сделать 14-й шрифт
@@ -58,639 +37,628 @@
 \usepackage{multicol}			  % Для текста в нескольких колонках
 \usepackage{soulutf8}             % Модификаторы начертания
 
-%%% Шаблонная информация для титульного листа
-\newcommand{\CourseName}{Название курса поменьше}
-\newcommand{\FullCourseNameFirstPart}{\so{БОЛЬШОЕ НАЗВАНИЕ КУРСА}}
-\newcommand{\SemesterNumber}{5}
-%\newcommand{\LecturerInitials}{Иван Иванович Иванов}
-%\newcommand{\CourseDate}{осень 2022}
-\newcommand{\AuthorInitials}{Сафаров Нурлан}
-\newcommand{\VKLink}{https://vk.com/safarov_nm}
-\newcommand{\GithubLink}{https://github.com/safarov-nm}
-
 
 \begin{document}
-\thispagestyle{empty}
+	\thispagestyle{empty}
 	\begin{center}
-
-МИНИСТЕРСТВО НАУКИ И ВЫСШЕГО ОБРАЗОВАНИЯ РОССИЙСКОЙ ФЕДЕРАЦИИ\n
-Федеральное государственное автономное образовательное учреждение высшего образования\n
-\textbf{«Национальный исследовательский Нижегородский государственный университет им. Н. И. Лобачевского»\n
-	(ННГУ им. Н. И. Лобачевского)}\n
-Институт информационных технологий, математики и механики
-\vspace{1cm}
-
-ОТЧЁТ ПО ЛАБОРАТОРНОЙ РАБОТЕ
-
-ПО ДИСЦИПЛИНЕ
-
-\textbf{<<Параллельное программирование для кластерных систем>>}
-
-НА ТЕМУ
-
-\textbf{<<Поразрядная сортировка для целых чисел с простым слиянием>>}
-\end{center}
-\vspace{0.3cm}
-\begin{flushright}
+		
+		МИНИСТЕРСТВО НАУКИ И ВЫСШЕГО ОБРАЗОВАНИЯ РОССИЙСКОЙ ФЕДЕРАЦИИ\n
+		Федеральное государственное автономное образовательное учреждение высшего образования\n
+		\textbf{«Национальный исследовательский Нижегородский государственный университет им. Н. И. Лобачевского»\n
+			(ННГУ им. Н. И. Лобачевского)}\n
+		Институт информационных технологий, математики и механики
+		\vspace{1cm}
+		
+		ОТЧЁТ ПО ЛАБОРАТОРНОЙ РАБОТЕ
+		
+		ПО ДИСЦИПЛИНЕ
+		
+		\textbf{<<Параллельное программирование для кластерных систем>>}
+		
+		НА ТЕМУ
+		
+		\textbf{<<Поразрядная сортировка для целых чисел с простым слиянием>>}
+	\end{center}
+	\vspace{0.3cm}
+	\begin{flushright}
+		
+		\textbf{Выполнил:}
+		
+		студент 3-го курса 
+		
+		гр. 3821Б1ФИ3 | МОСТ
+		
+		Сафаров Нурлан М.
+	\end{flushright}
 	
-	\textbf{Выполнил:}
+	\begin{flushright}
+		\textbf{Проверил:}
+		
+		преподаватель
+		
+		Нестеров А. Ю.
+	\end{flushright}
 	
-	студент 3-го курса 
+	\begin{center}
+		\vfill
+		Нижний Новгород
+		
+		2024
+	\end{center}
+	\newpage
+	\begin{center}\tableofcontents\end{center}
+	\newpage
+	\section*{\centering \textbf{Введение}}
+	\addcontentsline{toc}{section}{Введение}
 	
-	гр. 3821Б1ФИ3 | МОСТ
+	В эпоху информационных технологий, где данные играют ключевую роль в различных сферах, эффективная обработка и управление объемными массивами информации становятся неотъемлемой частью современных вычислений. Сортировка данных --- важная операция, призванная упорядочивать информацию и обеспечивать быстрый доступ к ней. В этом контексте методы сортировки, такие как поразрядная сортировка, привлекают внимание своей эффективностью и универсальностью.
 	
-	Сафаров Нурлан М.
-\end{flushright}
-
-\begin{flushright}
-	\textbf{Проверил:}
+	Поразрядная сортировка, опираясь на разбиение чисел на разряды и последовательную сортировку по каждому из них, обеспечивает эффективное решение для упорядочивания числовых последовательностей. В данной лабораторной работе фокус направлен на разработку параллельной версии алгоритма поразрядной сортировки, позволяющей распределять вычислительные задачи между несколькими процессами.
 	
-	преподаватель
+	Основным инструментом для организации параллельных вычислений в данной работе служит библиотека MPI (Message Passing Interface). Параллельная поразрядная сортировка требует корректного разделения данных между процессами, а затем объединения результатов, и именно MPI обеспечивает эффективную коммуникацию между ними.
 	
-	Нестеров А. Ю.
-\end{flushright}
-
-\begin{center}
-\vfill
-Нижний Новгород
-
-2024
-\end{center}
-\newpage
-\begin{center}\tableofcontents\end{center}
-\newpage
-\section*{\centering \textbf{Введение}}
-\addcontentsline{toc}{section}{Введение}
-
-В эпоху информационных технологий, где данные играют ключевую роль в различных сферах, эффективная обработка и управление объемными массивами информации становятся неотъемлемой частью современных вычислений. Сортировка данных --- важная операция, призванная упорядочивать информацию и обеспечивать быстрый доступ к ней. В этом контексте методы сортировки, такие как поразрядная сортировка, привлекают внимание своей эффективностью и универсальностью.
-
-Поразрядная сортировка, опираясь на разбиение чисел на разряды и последовательную сортировку по каждому из них, обеспечивает эффективное решение для упорядочивания числовых последовательностей. В данной лабораторной работе фокус направлен на разработку параллельной версии алгоритма поразрядной сортировки, позволяющей распределять вычислительные задачи между несколькими процессами.
-
-Основным инструментом для организации параллельных вычислений в данной работе служит библиотека MPI (Message Passing Interface). Параллельная поразрядная сортировка требует корректного разделения данных между процессами, а затем объединения результатов, и именно MPI обеспечивает эффективную коммуникацию между ними.
-
-Целью данной лабораторной работы является не только реализация параллельного алгоритма поразрядной сортировки, но и более глубокое понимание принципов параллельных вычислений и их применение в контексте сортировки больших объемов данных. От эффективности работы алгоритма зависит возможность обработки массивов данных различных масштабов, что делает данное исследование актуальным и важным в рамках современных требований к обработке информации.
-
-
-\newpage
-\section*{\centering Постановка задачи}
-\addcontentsline{toc}{section}{Постановка задачи}
-\textbf{Цель работы:} разработать и реализовать параллельную версию алгоритма поразрядной сортировки для целых чисел с простым слиянием с использованием библиотеки MPI. 
-
-\textbf{Задачи работы:}
-\vspace{-1em}
-\begin{itemize}[leftmargin=3em]
-	\setlength\itemsep{0cm}
-	\item Реализовать последовательную версию алгоритма поразрядной сортировки с простым слиянием результатов
-	\item Разработать параллельную версию алгоритма с использованием библиотеки MPI для распределенных вычислений
-	\item Реализовать функцию сортировки подсчётом для каждого разряда чисел
-	\item Разделение и объединение данных между процессами MPI для эффективного распределения и сбора результатов сортировки
-	\item Провести тестирования разработанного алгоритма на различных входных данных для оценки его эффективности и масштабируемости
-	\item Проанализировать полученные результаты и выявить особенности работы алгоритма в параллельной среде
-\end{itemize}
-
-\textbf{Использованное для реализации данной л/р оборудование и программное обеспечение:} 
-\vspace{-1em}
-\begin{itemize}[leftmargin=3em]
-	\setlength\itemsep{0cm}
-	\item Тип оборудования: ноутбук
-	\item ОС: Windows 11 Домашняя
-	\item Модель процессора: 12th Gen Intel(R) Core(TM) i7-12650H (2.70 GHz)
-	\item Память: 16 ГБ (RAM) | 512 ГБ (ROM)
-	\item Графический ускоритель: GeForce RTX 3060 для ноутбуков
-	\item IDE: Visual Studio 2019
-	\item Язык программирования: C/C++
-\end{itemize}
-
-
-\newpage
-\section*{\centering Описание алгоритма}
-\addcontentsline{toc}{section}{Описание алгоритма}
-Алгоритм поразрядной сортировки с простым слиянием включает в себя последовательный и параллельный этапы, обеспечивая эффективную сортировку массива целых чисел.
-
-\textbf{Последовательная поразрядная сортировка с простым слиянием:}
-\vspace{-2.5em}
-\begin{enumerate}[leftmargin=3em]
-	\setlength\itemsep{0cm}
-	\item Определение максимального разряда числа: на первом этапе определяется максимальное число во входном массиве, чтобы определить количество разрядов для сортировки
-	\item Итерации по разрядам: производится серия итераций по разрядам чисел. На каждой итерации применяется сортировка подсчетом для текущего разряда. Для этого: \vspace{-0.3cm}
-	\begin{itemize}
-	\setlength\itemsep{0cm}
-	\item создаётся массив подсчёта для цифр от 0 до 9.
-	\item считается количество элементов, имеющих определенное значение в текущем разряде.
-	\item вычисляются позиции для упорядочивания элементов.
-	\end{itemize}
-	\item Слияние отсортированных векторов: 
-	\vspace{-0.3cm}
-	\begin{itemize}
-	\setlength\itemsep{0cm}
-	\item после завершения итераций по разрядам получаются отсортированные подмассивы
-	\item производится простое слияние отсортированных векторов для получения окончательного результата
-	\end{itemize}
-\end{enumerate}
-
-
-\textbf{Параллельная поразрядная сортировка с использованием MPI:}
-\vspace{-1em}
-\begin{enumerate}[leftmargin=3em]
-	\setlength\itemsep{0cm}
-	\item Разделение данных между процессами: входной массив разделяется между процессами MPI. Каждый процесс получает свой участок данных
-	\item Параллельная поразрядная сортировка:
-	\begin{itemize}
+	Целью данной лабораторной работы является не только реализация параллельного алгоритма поразрядной сортировки, но и более глубокое понимание принципов параллельных вычислений и их применение в контексте сортировки больших объемов данных. От эффективности работы алгоритма зависит возможность обработки массивов данных различных масштабов, что делает данное исследование актуальным и важным в рамках современных требований к обработке информации.
+	
+	
+	\newpage
+	\section*{\centering Постановка задачи}
+	\addcontentsline{toc}{section}{Постановка задачи}
+	\textbf{Цель работы:} разработать и реализовать параллельную версию алгоритма поразрядной сортировки для целых чисел с простым слиянием с использованием библиотеки MPI. 
+	
+	\textbf{Задачи работы:}
+	\vspace{-1em}
+	\begin{itemize}[leftmargin=3em]
 		\setlength\itemsep{0cm}
-		\item каждый процесс выполняет свою часть последовательной поразрядной сортировки для своего подмассива
-		\item промежуточные результаты сортировки отправляются обратно на главный процесс для последующего слияния
+		\item Реализовать последовательную версию алгоритма поразрядной сортировки с простым слиянием результатов
+		\item Разработать параллельную версию алгоритма с использованием библиотеки MPI для распределенных вычислений
+		\item Реализовать функцию сортировки подсчётом для каждого разряда чисел
+		\item Разделение и объединение данных между процессами MPI для эффективного распределения и сбора результатов сортировки
+		\item Провести тестирования разработанного алгоритма на различных входных данных для оценки его эффективности и масштабируемости
+		\item Проанализировать полученные результаты и выявить особенности работы алгоритма в параллельной среде
 	\end{itemize}
-	\item Сбор результатов и простое слияние: 
-	\vspace{-0.3cm}
-	\begin{itemize}
+	
+	\textbf{Использованное для реализации данной л/р оборудование и программное обеспечение:} 
+	\vspace{-1em}
+	\begin{itemize}[leftmargin=3em]
 		\setlength\itemsep{0cm}
-		\item главный процесс собирает отсортированные подмассивы от каждого процесса
-		\item производится простое слияние отсортированных векторов для получения окончательного результата
+		\item Тип оборудования: ноутбук
+		\item ОС: Windows 11 Домашняя
+		\item Модель процессора: 12th Gen Intel(R) Core(TM) i7-12650H (2.70 GHz)
+		\item Память: 16 ГБ (RAM) | 512 ГБ (ROM)
+		\item Графический ускоритель: GeForce RTX 3060 для ноутбуков
+		\item IDE: Visual Studio 2019
+		\item Язык программирования: C/C++
 	\end{itemize}
-\end{enumerate}
-
-
-\textbf{Особенности алгоритма:}
-\vspace{-1em}
+	
+	
+	\newpage
+	\section*{\centering Описание алгоритма}
+	\addcontentsline{toc}{section}{Описание алгоритма}
+	Алгоритм поразрядной сортировки с простым слиянием включает в себя последовательный и параллельный этапы, обеспечивая эффективную сортировку массива целых чисел.
+	
+	\textbf{Последовательная поразрядная сортировка с простым слиянием:}
+	\vspace{-2.5em}
+	\begin{enumerate}[leftmargin=3em]
+		\setlength\itemsep{0cm}
+		\item Определение максимального разряда числа: на первом этапе определяется максимальное число во входном массиве, чтобы определить количество разрядов для сортировки
+		\item Итерации по разрядам: производится серия итераций по разрядам чисел. На каждой итерации применяется сортировка подсчетом для текущего разряда. Для этого: \vspace{-0.3cm}
+		\begin{itemize}
+			\setlength\itemsep{0cm}
+			\item создаётся массив подсчёта для цифр от 0 до 9.
+			\item считается количество элементов, имеющих определенное значение в текущем разряде.
+			\item вычисляются позиции для упорядочивания элементов.
+		\end{itemize}
+		\item Слияние отсортированных векторов: 
+		\vspace{-0.3cm}
+		\begin{itemize}
+			\setlength\itemsep{0cm}
+			\item после завершения итераций по разрядам получаются отсортированные подмассивы
+			\item производится простое слияние отсортированных векторов для получения окончательного результата
+		\end{itemize}
+	\end{enumerate}
+	
+	
+	\textbf{Параллельная поразрядная сортировка с использованием MPI:}
+	\vspace{-1em}
+	\begin{enumerate}[leftmargin=3em]
+		\setlength\itemsep{0cm}
+		\item Разделение данных между процессами: входной массив разделяется между процессами MPI. Каждый процесс получает свой участок данных
+		\item Параллельная поразрядная сортировка:
+		\begin{itemize}
+			\setlength\itemsep{0cm}
+			\item каждый процесс выполняет свою часть последовательной поразрядной сортировки для своего подмассива
+			\item промежуточные результаты сортировки отправляются обратно на главный процесс для последующего слияния
+		\end{itemize}
+		\item Сбор результатов и простое слияние: 
+		\vspace{-0.3cm}
+		\begin{itemize}
+			\setlength\itemsep{0cm}
+			\item главный процесс собирает отсортированные подмассивы от каждого процесса
+			\item производится простое слияние отсортированных векторов для получения окончательного результата
+		\end{itemize}
+	\end{enumerate}
+	
+	
+	\textbf{Особенности алгоритма:}
+	\vspace{-1em}
 	\begin{itemize}[leftmargin=3em]
 		\setlength\itemsep{0cm}
 		\item Алгоритм обладает стабильностью, сохраняя относительный порядок равных элементов
 		\item Параллельный подход позволяет ускорить сортировку на многопроцессорных системах, распределяя вычислительную нагрузку
 		\item Использование MPI обеспечивает эффективную коммуникацию между процессами, необходимую для сбора и объединения результатов параллельной сортировки
-		\end{itemize}
-\newpage
-\subsection*{\centering Описание программ}
-\addcontentsline{toc}{section}{Описание программ}
-\subsubsection*{\centering Последовательная версия алгоритма}
-\addcontentsline{toc}{subsubsection}{Последовательная версия алгоритма}
-Функция \textbf{radixSortWithSimpleMergeSequential()} использует вспомогательную функцию countSortByDigit() для сортировки вектора целых чисел vector с использованием поразрядной сортировки. Сначала определяется максимальный элемент в векторе. Затем происходит несколько итераций сортировки по каждой цифре числа (начиная с самого младшего разряда) с использованием countSortByDigit(). В результате вектор vector становится отсортированным по всем цифрам числа. Код данной функции выглядит следующим образом:
-\vspace{-1.9em}
-\begin{minted}[frame=lines, framesep=2mm, breaklines, breakafter=d]{c++}
-std::vector<int> radixSortWithSimpleMergeSequential(std::vector<int> vector) {
-	const int size = vector.size();
-	int max = vector[0];
-	for (int i = 0; i < size; i++) {
-		max = std::max(max, vector[i]);
-	}
-		
-	for (int i = 1; max / i > 0; i *= 10) {
-		countSortByDigit(vector.data(), i, size);
-	}
-		
-	return vector;
-}
-\end{minted}
+	\end{itemize}
+	\newpage
+	\subsection*{\centering Описание программ}
+	\addcontentsline{toc}{section}{Описание программ}
+	\subsubsection*{\centering Последовательная версия алгоритма}
+	\addcontentsline{toc}{subsubsection}{Последовательная версия алгоритма}
+	Функция \textbf{radixSortWithSimpleMergeSequential()} использует вспомогательную функцию countSortByDigit() для сортировки вектора целых чисел vector с использованием поразрядной сортировки. Сначала определяется максимальный элемент в векторе. Затем происходит несколько итераций сортировки по каждой цифре числа (начиная с самого младшего разряда) с использованием countSortByDigit(). В результате вектор vector становится отсортированным по всем цифрам числа. Код данной функции выглядит следующим образом:
+	\vspace{-1em}
+	\begin{verbatim}
+		std::vector<int> radixSortWithSimpleMergeSequential(std::vector<int> vector) {
+			const int size = vector.size();
+			int max = vector[0];
+			for (int i = 0; i < size; i++) {
+				max = std::max(max, vector[i]);
+			}
+			
+			for (int i = 1; max / i > 0; i *= 10) {
+				countSortByDigit(vector.data(), i, size);
+			}
+			
+			return vector;
+		}
+	\end{verbatim}	
 
- 
-Функция \textbf{countSortByDigit()} --- это вспомогательная функция для сортировки массива целых чисел v по одной из цифр числа. Она создает временный массив result и использует массив count, чтобы подсчитать количество элементов с одинаковой цифрой на текущей позиции разряда. Затем она использует эти подсчеты для распределения элементов в правильном порядке в массиве result. Наконец, копирует результат обратно в массив v. Код данной функции выглядит следующим образом:
-\vspace{-1.9em}
-\begin{minted}[frame=lines, framesep=2mm, breaklines, breakafter=d]{c++}
-void countSortByDigit(int* v, int d, int size) {
-	std::vector<int> result(size);
-	int count[10] = { 0 };
-	
-	for (int i = 0; i < size; i++) {
-		count[(v[i] / d) % 10]++;
-	}
-	
-	for (int i = 1; i < 10; i++) {
-		count[i] += count[i - 1];
-	}
-	
-	for (int i = size - 1; i >= 0; i--) {
-		result[count[(v[i]/d) % 10] - 1] = v[i];
-		count[(v[i]/d) % 10]--;
-	}
-	
-	for (int i = 0; i < size; i++)
-	v[i] = result[i];
-}
-\end{minted}
-\subsubsection*{\centering Параллельная версия алгоритма}
-\addcontentsline{toc}{subsubsection}{Параллельная версия алгоритма}
-Функция \textbf{radixSortWithSimpleMergeParallel()} принимает вектор целых чисел и размер этого вектора sizeOfVector, который указывает на количество элементов в входном векторе. Процедура разделения и слияния данных происходит следующим образом:
-\begin{enumerate}[leftmargin=3em]
-	\item MPI\_Comm\_size() и MPI\_Comm\_rank()
-	\begin{itemize}
-		\setlength\itemsep{0cm}
-		\item Получение общего количества процессов (size) и ранга текущего процесса (rank) в группе MPI
-	\end{itemize}
-	
+	Функция \textbf{countSortByDigit()} --- это вспомогательная функция для сортировки массива целых чисел v по одной из цифр числа. Она создает временный массив result и использует массив count, чтобы подсчитать количество элементов с одинаковой цифрой на текущей позиции разряда. Затем она использует эти подсчеты для распределения элементов в правильном порядке в массиве result. Наконец, копирует результат обратно в массив v. Код данной функции выглядит следующим образом:
+	\vspace{-1em}
+	\begin{verbatim}
+		void countSortByDigit(int* v, int d, int size) {
+			std::vector<int> result(size);
+			int count[10] = { 0 };
+			
+			for (int i = 0; i < size; i++) {
+				count[(v[i] / d) % 10]++;
+			}
+			
+			for (int i = 1; i < 10; i++) {
+				count[i] += count[i - 1];
+			}
+			
+			for (int i = size - 1; i >= 0; i--) {
+				result[count[(v[i]/d) % 10] - 1] = v[i];
+				count[(v[i]/d) % 10]--;
+			}
+			
+			for (int i = 0; i < size; i++)
+			v[i] = result[i];
+		}
+	\end{verbatim}
+	\subsubsection*{\centering Параллельная версия алгоритма}
+	\addcontentsline{toc}{subsubsection}{Параллельная версия алгоритма}
+	Функция \textbf{radixSortWithSimpleMergeParallel()} принимает вектор целых чисел и размер этого вектора sizeOfVector, который указывает на количество элементов в входном векторе. Процедура разделения и слияния данных происходит следующим образом:
+	\begin{enumerate}[leftmargin=3em]
+		\item MPI\_Comm\_size() и MPI\_Comm\_rank()
+		\begin{itemize}
+			\setlength\itemsep{0cm}
+			\item Получение общего количества процессов (size) и ранга текущего процесса (rank) в группе MPI
+		\end{itemize}
+		
 		\item Разделение данных
-	\begin{itemize}
-		\setlength\itemsep{0cm}
-		\item Исходный вектор данных разбивается на части. Если delta (часть данных для каждого процесса) не равен нулю, то процесс с рангом 0 отправляет порции данных другим процессам с помощью MPI\_Send(). Остальные процессы получают свои порции данных с использованием MPI\_Recv()
-	\end{itemize}
-	
+		\begin{itemize}
+			\setlength\itemsep{0cm}
+			\item Исходный вектор данных разбивается на части. Если delta (часть данных для каждого процесса) не равен нулю, то процесс с рангом 0 отправляет порции данных другим процессам с помощью MPI\_Send(). Остальные процессы получают свои порции данных с использованием MPI\_Recv()
+		\end{itemize}
+		
 		\item Сортировка каждой части
-	\begin{itemize}
-		\setlength\itemsep{0cm}
-		\item Каждый процесс сортирует свою часть данных, вызывая функцию radixSortWithSimpleMergeSequential() для сортировки своей части вектора
-	\end{itemize}
-	
+		\begin{itemize}
+			\setlength\itemsep{0cm}
+			\item Каждый процесс сортирует свою часть данных, вызывая функцию radixSortWithSimpleMergeSequential() для сортировки своей части вектора
+		\end{itemize}
+		
 		\item Сбор отсортированных данных на процессе 0
-	\begin{itemize}
-		\setlength\itemsep{0cm}
-		\item Если процесс имеет ранг 0, он собирает отсортированные части данных от других процессов при помощи MPI\_Recv(). Затем он объединяет эти части с использованием функции mergeSortedVectors() для получения окончательного отсортированного результата
-	\end{itemize}
-	
+		\begin{itemize}
+			\setlength\itemsep{0cm}
+			\item Если процесс имеет ранг 0, он собирает отсортированные части данных от других процессов при помощи MPI\_Recv(). Затем он объединяет эти части с использованием функции mergeSortedVectors() для получения окончательного отсортированного результата
+		\end{itemize}
+		
 		\item Обработка оставшихся данных.
-	\begin{itemize}
-		\setlength\itemsep{0cm}
-		\item Если осталась часть данных, которая не была равномерно распределена между процессами, процесс с рангом 0 сортирует оставшуюся часть и объединяет её с уже отсортированными данными. Функция возвращает окончательный отсортированный вектор данных
-	\end{itemize}
-	
+		\begin{itemize}
+			\setlength\itemsep{0cm}
+			\item Если осталась часть данных, которая не была равномерно распределена между процессами, процесс с рангом 0 сортирует оставшуюся часть и объединяет её с уже отсортированными данными. Функция возвращает окончательный отсортированный вектор данных
+		\end{itemize}
+		
 	\end{enumerate}
 	
-Код данной функции выглядит следующим образом:
-\vspace{-1.9em}
-\begin{minted}[frame=lines, framesep=2mm, breaklines, breakafter=d]{c++}
-std::vector<int> radixSortWithSimpleMergeParallel(std::vector<int> vector, int sizeOfVector) {
-	int size, rank;
-	MPI_Comm_size(MPI_COMM_WORLD, &size);
-	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-	int delta = sizeOfVector / size;
-	std::vector<int> globalResult(sizeOfVector);
-	
-	if (delta != 0) {
-		if (rank == 0) {
-			for (int processID = 1; processID < size; processID++) {
-				MPI_Send(vector.data() + processID*delta, delta, MPI_INT, processID, 0, MPI_COMM_WORLD);
+	Код данной функции выглядит следующим образом:
+	\vspace{-1em}
+	\begin{verbatim}
+		std::vector<int> radixSortWithSimpleMergeParallel(std::vector<int> vector, int sizeOfVector) {
+			int size, rank;
+			MPI_Comm_size(MPI_COMM_WORLD, &size);
+			MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+			int delta = sizeOfVector / size;
+			std::vector<int> globalResult(sizeOfVector);
+			
+			if (delta != 0) {
+				if (rank == 0) {
+					for (int processID = 1; processID < size; processID++) {
+						MPI_Send(vector.data() + processID*delta, delta, MPI_INT, processID, 0, MPI_COMM_WORLD);
+					}
+				}
+				
+				std::vector<int> localVector(delta);
+				if (rank == 0) {
+					localVector = std::vector<int>(vector.begin(), vector.begin() + delta);
+				}
+				else {
+					MPI_Status statusOne;
+					MPI_Recv(localVector.data(), delta, MPI_INT, 0, 0, MPI_COMM_WORLD, &statusOne);
+				}
+				
+				std::vector<int> localResult = radixSortWithSimpleMergeSequential(localVector);
+				
+				if (rank == 0) {
+					std::vector<std::vector<int> > result;
+					result.push_back(localResult);
+					for (int processID = 1; processID < size; processID++) {
+						MPI_Status statusTwo;
+						MPI_Recv(localResult.data(), delta, MPI_INT, processID, 0, MPI_COMM_WORLD, &statusTwo);
+						result.push_back(localResult);
+					}
+					globalResult = mergeSortedVectors(result);
+				}
+				else {
+					MPI_Send(localResult.data(), delta, MPI_INT, 0, 0, MPI_COMM_WORLD);
+				}
 			}
-		}
-		
-		std::vector<int> localVector(delta);
-		if (rank == 0) {
-			localVector = std::vector<int>(vector.begin(), vector.begin() + delta);
-		}
-		else {
-			MPI_Status statusOne;
-			MPI_Recv(localVector.data(), delta, MPI_INT, 0, 0, MPI_COMM_WORLD, &statusOne);
-		}
-		
-		std::vector<int> localResult = radixSortWithSimpleMergeSequential(localVector);
-		
-		if (rank == 0) {
-			std::vector<std::vector<int> > result;
-			result.push_back(localResult);
-			for (int processID = 1; processID < size; processID++) {
-				MPI_Status statusTwo;
-				MPI_Recv(localResult.data(), delta, MPI_INT, processID, 0, MPI_COMM_WORLD, &statusTwo);
+			if (sizeOfVector % size != 0 && rank == 0) {
+				std::vector<int> localVector = std::vector<int>(vector.end() - sizeOfVector % size, vector.end());
+				std::vector<int> localResult = radixSortWithSimpleMergeSequential(localVector);
+				std::vector<std::vector<int> > result;
+				if (delta != 0) {
+					result.push_back(globalResult);
+				}
 				result.push_back(localResult);
+				globalResult = mergeSortedVectors(result);
 			}
-			globalResult = mergeSortedVectors(result);
+			
+			return globalResult;
 		}
-		else {
-			MPI_Send(localResult.data(), delta, MPI_INT, 0, 0, MPI_COMM_WORLD);
-		}
-	}
-	if (sizeOfVector % size != 0 && rank == 0) {
-		std::vector<int> localVector = std::vector<int>(vector.end() - sizeOfVector % size, vector.end());
-		std::vector<int> localResult = radixSortWithSimpleMergeSequential(localVector);
-		std::vector<std::vector<int> > result;
-		if (delta != 0) {
-			result.push_back(globalResult);
-		}
-		result.push_back(localResult);
-		globalResult = mergeSortedVectors(result);
-	}
+	\end{verbatim}
 	
-	return globalResult;
-}
-\end{minted}
-
-Вспомогательная функция \textbf{mergeSortedVectors()}, принимает вектор векторов целых чисел, предполагая, что входные векторы уже отсортированы. Если вектор содержит только один подвектор, функция возвращает его без изменений. В противном случае, она выполняет слияние всех подвекторов в один отсортированный вектор, используя метод слияния. Алгоритм проходит по каждому элементу каждого подвектора и вставляет его в правильную позицию в результирующем векторе. Функция продолжает этот процесс до тех пор, пока все подвекторы не будут полностью включены в результирующий отсортированный вектор. Код данной функции выглядит следующим образом:
-\vspace{-1.9em}
-\begin{minted}[frame=lines, framesep=2mm, breaklines, breakafter=d]{c++}
-std::vector<int> mergeSortedVectors(std::vector<std::vector<int>> m) {
-	if (m.size() == 1) {
-		return m[0];
-	}
-	const int size = m.size();
-	std::vector<int> result(m[0].begin(), m[0].end());
-	for (int i = 1; i < size; i++) {
-		std::vector<int> v = m[i];
-		auto iter = v.begin();
-		int k = 0;
-		
-		while (k < result.size()) {
-			if (iter != v.end() && result[k] > *iter) {
-				result.insert(result.begin() + k, *iter);
-				iter++;
+	Вспомогательная функция \textbf{mergeSortedVectors()}, принимает вектор векторов целых чисел, предполагая, что входные векторы уже отсортированы. Если вектор содержит только один подвектор, функция возвращает его без изменений. В противном случае, она выполняет слияние всех подвекторов в один отсортированный вектор, используя метод слияния. Алгоритм проходит по каждому элементу каждого подвектора и вставляет его в правильную позицию в результирующем векторе. Функция продолжает этот процесс до тех пор, пока все подвекторы не будут полностью включены в результирующий отсортированный вектор. Код данной функции выглядит следующим образом:
+	\vspace{-1em}
+	\begin{verbatim}
+		std::vector<int> mergeSortedVectors(std::vector<std::vector<int>> m) {
+			if (m.size() == 1) {
+				return m[0];
 			}
-			k++;
-		}
-		while (iter != v.end()) {
-			result.insert(result.end(), *iter);
-			iter++;
-		}
-	}
-	return result;
-}
-\end{minted}
-\newpage
-\section*{\centering Эксперименты и их результаты}
-\addcontentsline{toc}{section}{Эксперименты и их результаты}
-
-Во всех проведённых мной экспериментов была использована функция \textbf{generateRandomVector()}. Она создаёт и возвращает вектор случайных целых чисел заданного размера. Код данной функции выглядит следующим образом:
-\vspace{-1.9em}
-\begin{minted}[frame=lines, framesep=2mm, breaklines, breakafter=d]{c++}
-std::vector<int> generateRandomVector(int size) {
-	std::random_device dev;
-	std::mt19937 gen(dev());
-	std::vector<int> randomVector(size);
-	for (int i = 0; i < size; i++)
-	randomVector[i] = gen() % 100;
-	
-	return randomVector;
-}
-\end{minted}
-
-
-В ходе проведения эксперимента были выполнены пять тестов, включающих в себя векторы размером \textbf{250}, \textbf{500}, \textbf{1000}, \textbf{1500} и \textbf{2700} элементов. Результаты данных тестов представлены в таблицах на следующих страницах.
-\newpage
-\begin{table}[h]
-	\centering
-	\begin{tblr}{
-			row{1} = {c},
-			cell{1}{1} = {c=3}{},
-			vlines,
-			hline{1-3,8} = {-}{},
-		}
-		2 процесса               &                                              &                                                  \\
-		{Количество \\элементов} & {Параллельная \\версия алгоритма \\(в сек.)} & {Последовательная \\версия алгоритма \\(в сек.)} \\
-		250                      & 0.000389                                     & 0.000691                                         \\
-		500                      & 0.000745                                     & 0.00101                                          \\
-		1000                     & 0.000897                                     & 0.00206                                          \\
-		1500                     & 0.001272                                     & 0.00318                                          \\
-		2700                     & 0.002220                                     & 0.00532                                          
-	\end{tblr}
-\end{table}
-
-\begin{table}[h]
-	\centering
-	\begin{tblr}{
-			row{1} = {c},
-			cell{1}{1} = {c=3}{},
-			vlines,
-			hline{1-3,8} = {-}{},
-		}
-		3 процесса               &                                              &                                                  \\
-		{Количество \\элементов} & {Параллельная \\версия алгоритма \\(в сек.)} & {Последовательная \\версия алгоритма \\(в сек.)} \\
-		250                      & 0.000262                                     & 0.000691                                         \\
-		500                      & 0.000460                                     & 0.00101                                          \\
-		1000                     & 0.000771                                     & 0.00206                                          \\
-		1500                     & 0.001034                                     & 0.00318                                          \\
-		2700                     & 0.001839                                     & 0.00532                                          
-	\end{tblr}
-\end{table}
-
-\begin{table}[h]
-	\centering
-	\begin{tblr}{
-			row{1} = {c},
-			cell{1}{1} = {c=3}{},
-			vlines,
-			hline{1-3,8} = {-}{},
-		}
-		4 процесса               &                                              &                                                  \\
-		{Количество \\элементов} & {Параллельная \\версия алгоритма \\(в сек.)} & {Последовательная \\версия алгоритма \\(в сек.)} \\
-		250                      & 0.000175                                     & 0.000691                                         \\
-		500                      & 0.000285                                     & 0.00101                                          \\
-		1000                     & 0.000704                                     & 0.00206                                          \\
-		1500                     & 0.000791                                     & 0.00318                                          \\
-		2700                     & 0.001301                                     & 0.00532                                          
-	\end{tblr}
-\end{table}
-
-
-\newpage
-\textbf{Анализ полученных данных:}
-\vspace{-0.65cm}
-\begin{enumerate}[leftmargin=3em]
-	\item 250 элементов
-	\begin{itemize}
-		\setlength\itemsep{0cm}
-		\item Параллельная: 0.000389 с. (2 процесса) < 0.000262 с. (3 процесса) < 0.000175 с. (4 процесса)
-		\item Последовательная: 0.000691 с.
-		В данном случае, параллельная версия не всегда выигрывает в скорости выполнения, возможно, из-за небольшого размера вектора и дополнительных затрат на коммуникацию между процессами.
-	\end{itemize}
-	
-	\item 500 элементов
-	\begin{itemize}
-		\setlength\itemsep{0cm}
-		\item Параллельная: 0.000745 с. (2 процесса) < 0.000460 с. (3 процесса) < 0.000285 с. (4 процесса)
-		\item Последовательная: 0.00101 с.
-		Здесь параллельная версия демонстрирует значительное ускорение, особенно с увеличением числа процессов.
-	\end{itemize}
-	
-	\item 1000 элементов
-	\begin{itemize}
-		\setlength\itemsep{0cm}
-		\item Параллельная: 0.000897 с. (2 процесса) < 0.000771 с. (3 процесса) < 0.000704 с. (4 процесса)
-		\item Последовательная: 0.0020631 с.
-		Ускорение заметно и становится более заметным при увеличении размера вектора.
-	\end{itemize}
-	
-	\item 1500 элементов
-	\begin{itemize}
-		\setlength\itemsep{0cm}
-		\item Параллельная: 0.001272 с. (2 процесса) < 0.001034 с. (3 процесса) < 0.000791 с. (4 процесса)
-		\item Последовательная: 0.00318 с.
-		Параллельная версия продолжает демонстрировать ускорение по сравнению с последовательной.
-	\end{itemize}
-	
-	\item 2700 элементов
-	\begin{itemize}
-		\setlength\itemsep{0cm}
-		\item Параллельная: 0.002220 с. (2 процесса) < 0.001839 с. (3 процесса) < 0.001301 с. (4 процесса)
-		\item Последовательная: 0.005328 с.
-		Здесь тоже видно ускорение при использовании параллельной версии.
-	\end{itemize}
-\end{enumerate}
-
-\textbf{Выводы:}
-\vspace{-1em}
-\begin{itemize}[leftmargin=3em]
-	\setlength\itemsep{0cm}
-	\item Параллельная версия алгоритма даёт заметное ускорение при обработке больших объемов данных
-	\item Ускорение становится более значительным при увеличении размера вектора и числа процессов
-	\item Небольшие векторы могут не всегда оправдывать затраты на параллелизацию из-за дополнительных расходов на коммуникацию между процессами
-	\item Разделение данных между процессами и их последующее объединение влияют на эффективность параллельной версии
-\end{itemize}
-
-\newpage
-\section*{\centering Заключение}
-\addcontentsline{toc}{section}{Заключение}
-
-Целью данной лабораторной работы было разработать и реализовать параллельную версию алгоритма поразрядной сортировки для целых чисел с использованием простого слияния и библиотеки MPI для распределенных вычислений. В ходе выполнения задач были достигнуты следующие результаты.
-
-Сначала была реализована последовательная версия алгоритма поразрядной сортировки с использованием простого слияния. Затем была разработана и реализована параллельная версия, которая использовала библиотеку MPI для распределенных вычислений. Основной задачей было эффективно разделить данные между процессами и собрать результаты сортировки, используя механизмы MPI.
-
-Была реализована функция сортировки подсчётом для каждого разряда чисел, что позволило эффективно сортировать числа по разрядам в параллельной среде.
-
-Экспериментальное тестирование проводилось на векторах различных размеров: 250, 500, 1000, 1500, 2700 элементов. Результаты тестирования показали, что параллельная версия алгоритма демонстрирует ускорение выполнения по сравнению с последовательной версией, особенно при обработке больших объемов данных. Однако, при малых размерах векторов, дополнительные затраты на коммуникацию между процессами могут сделать параллельную версию менее эффективной.
-
-В целом, разработанный параллельный алгоритм поразрядной сортировки с простым слиянием на основе MPI показывает потенциал для ускорения обработки больших объемов данных в распределенных вычислительных средах. Однако, перед применением данного алгоритма в реальных системах, требуется дополнительный анализ и оптимизация для обработки меньших объемов данных и оптимального использования ресурсов вычислительного кластера.
-
-\newpage
-\section*{\centering Список литературы}
-\addcontentsline{toc}{section}{Список литературы}
-\begin{enumerate}[label={[\arabic*]}]
-	\item Попов, А. Н. (2020). Параллельные алгоритмы в вычислительных системах. Москва: Издательство Технической Литературы
-	\item Шастун, А. Е., \& Попов, А. Н. (2019). Эффективность алгоритмов сортировки в распределенных вычислительных средах. Журнал параллельных вычислений, 15(3), 112-127
-	\item Позов, Д. М., \& Воля, П. А. (2021). Использование MPI для разработки параллельных приложений. В сборнике: Программирование и вычислительная техника, 40-55. Издательство "Наука"
-	\item Матвиенко, С. Д., \& Новиков, К. Ф. (2018). Практическое руководство по алгоритмам и структурам данных. Нью-Йорк: Академическое издательство.
-	\item Сафаров, Н. М. safarov-nm (GitHub Repository). URL:\href{https://github.com/safarov-nm}{https://github.com/safarov-nm}
-\end{enumerate}
-
-\newpage
-\section*{\centering Приложение}
-\addcontentsline{toc}{section}{Приложение}
-\subsection*{\centering Файл <<int\_radix\_sort\_simple\_merge.h>>}
-\addcontentsline{toc}{subsection}{Файл <<int\_radix\_sort\_simple\_merge.h>>}
-\begin{minted}[frame=lines, framesep=2mm, breaklines, breakafter=d]{c++}
-#include <mpi.h>
-#include <vector>
-#include <random>
-#include <algorithm>
-#include <iostream>
-
-void countSortByDigit(int* v, int d, int size);
-std::vector<int> generateRandomVector(int size);
-std::vector<int> mergeSortedVectors(std::vector<std::vector<int>> m);
-std::vector<int> radixSortWithSimpleMergeSequential(std::vector<int> vector);
-std::vector<int> radixSortWithSimpleMergeParallel(std::vector<int> vector, int sizeOfVector);
-\end{minted}
-
-\newpage
-\subsection*{\centering Файл <<int\_radix\_sort\_simple\_merge.cpp>>}
-\addcontentsline{toc}{subsection}{Файл <<int\_radix\_sort\_simple\_merge.cpp>>}
-\begin{minted}[frame=lines, framesep=2mm, breaklines, breakafter=d]{c++}
-#include "int_radix_sort_simple_merge.h"
-
-std::vector<int> generateRandomVector(int size) {
-	std::random_device dev;
-	std::mt19937 gen(dev());
-	std::vector<int> randomVector(size);
-	for (int i = 0; i < size; i++)
-	randomVector[i] = gen() % 100;
-	
-	return randomVector;
-}
-
-void countSortByDigit(int* v, int d, int size) {
-	std::vector<int> result(size);
-	int count[10] = { 0 };
-	
-	for (int i = 0; i < size; i++) {
-		count[(v[i] / d) % 10]++;
-	}
-	
-	for (int i = 1; i < 10; i++) {
-		count[i] += count[i - 1];
-	}
-	
-	for (int i = size - 1; i >= 0; i--) {
-		result[count[(v[i]/d) % 10] - 1] = v[i];
-		count[(v[i]/d) % 10]--;
-	}
-	
-	for (int i = 0; i < size; i++)
-	v[i] = result[i];
-}
-
-std::vector<int> radixSortWithSimpleMergeSequential(std::vector<int> vector) {
-	const int size = vector.size();
-	int max = vector[0];
-	for (int i = 0; i < size; i++) {
-		max = std::max(max, vector[i]);
-	}
-	
-	for (int i = 1; max / i > 0; i *= 10) {
-		countSortByDigit(vector.data(), i, size);
-	}
-	
-	return vector;
-}
-
-std::vector<int> mergeSortedVectors(std::vector<std::vector<int>> m) {
-	if (m.size() == 1) {
-		return m[0];
-	}
-	const int size = m.size();
-	std::vector<int> result(m[0].begin(), m[0].end());
-	for (int i = 1; i < size; i++) {
-		std::vector<int> v = m[i];
-		auto iter = v.begin();
-		int k = 0;
-		
-		while (k < result.size()) {
-			if (iter != v.end() && result[k] > *iter) {
-				result.insert(result.begin() + k, *iter);
-				iter++;
+			const int size = m.size();
+			std::vector<int> result(m[0].begin(), m[0].end());
+			for (int i = 1; i < size; i++) {
+				std::vector<int> v = m[i];
+				auto iter = v.begin();
+				int k = 0;
+				
+				while (k < result.size()) {
+					if (iter != v.end() && result[k] > *iter) {
+						result.insert(result.begin() + k, *iter);
+						iter++;
+					}
+					k++;
+				}
+				while (iter != v.end()) {
+					result.insert(result.end(), *iter);
+					iter++;
+				}
 			}
-			k++;
+			return result;
 		}
-		while (iter != v.end()) {
-			result.insert(result.end(), *iter);
-			iter++;
-		}
-	}
-	return result;
-}
-
-std::vector<int> radixSortWithSimpleMergeParallel(std::vector<int> vector, int sizeOfVector) {
-	int size, rank;
-	MPI_Comm_size(MPI_COMM_WORLD, &size);
-	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-	int delta = sizeOfVector / size;
-	std::vector<int> globalResult(sizeOfVector);
+	\end{verbatim}
+	\newpage
+	\section*{\centering Эксперименты и их результаты}
+	\addcontentsline{toc}{section}{Эксперименты и их результаты}
 	
-	if (delta != 0) {
-		if (rank == 0) {
-			for (int processID = 1; processID < size; processID++) {
-				MPI_Send(vector.data() + processID*delta, delta, MPI_INT, processID, 0, MPI_COMM_WORLD);
+	Во всех проведённых мной экспериментов была использована функция \textbf{generateRandomVector()}. Она создаёт и возвращает вектор случайных целых чисел заданного размера. Код данной функции выглядит следующим образом:
+	\vspace{-1em}
+	\begin{verbatim}
+		std::vector<int> generateRandomVector(int size) {
+			std::random_device dev;
+			std::mt19937 gen(dev());
+			std::vector<int> randomVector(size);
+			for (int i = 0; i < size; i++)
+			randomVector[i] = gen() % 100;
+			
+			return randomVector;
+		}
+	\end{verbatim}
+	
+	
+	В ходе проведения эксперимента были выполнены пять тестов, включающих в себя векторы размером \textbf{250}, \textbf{500}, \textbf{1000}, \textbf{1500} и \textbf{2700} элементов. Результаты данных тестов представлены в таблицах на следующих страницах.
+	\newpage
+	\begin{table}[h]
+		\centering
+		\begin{tblr}{
+				row{1} = {c},
+				cell{1}{1} = {c=3}{},
+				vlines,
+				hline{1-3,8} = {-}{},
 			}
+			2 процесса               &                                              &                                                  \\
+			{Количество \\элементов} & {Параллельная \\версия алгоритма \\(в сек.)} & {Последовательная \\версия алгоритма \\(в сек.)} \\
+			250                      & 0.000389                                     & 0.000691                                         \\
+			500                      & 0.000745                                     & 0.00101                                          \\
+			1000                     & 0.000897                                     & 0.00206                                          \\
+			1500                     & 0.001272                                     & 0.00318                                          \\
+			2700                     & 0.002220                                     & 0.00532                                          
+		\end{tblr}
+	\end{table}
+	
+	\begin{table}[h]
+		\centering
+		\begin{tblr}{
+				row{1} = {c},
+				cell{1}{1} = {c=3}{},
+				vlines,
+				hline{1-3,8} = {-}{},
+			}
+			3 процесса               &                                              &                                                  \\
+			{Количество \\элементов} & {Параллельная \\версия алгоритма \\(в сек.)} & {Последовательная \\версия алгоритма \\(в сек.)} \\
+			250                      & 0.000262                                     & 0.000691                                         \\
+			500                      & 0.000460                                     & 0.00101                                          \\
+			1000                     & 0.000771                                     & 0.00206                                          \\
+			1500                     & 0.001034                                     & 0.00318                                          \\
+			2700                     & 0.001839                                     & 0.00532                                          
+		\end{tblr}
+	\end{table}
+	
+	\begin{table}[h]
+		\centering
+		\begin{tblr}{
+				row{1} = {c},
+				cell{1}{1} = {c=3}{},
+				vlines,
+				hline{1-3,8} = {-}{},
+			}
+			4 процесса               &                                              &                                                  \\
+			{Количество \\элементов} & {Параллельная \\версия алгоритма \\(в сек.)} & {Последовательная \\версия алгоритма \\(в сек.)} \\
+			250                      & 0.000175                                     & 0.000691                                         \\
+			500                      & 0.000285                                     & 0.00101                                          \\
+			1000                     & 0.000704                                     & 0.00206                                          \\
+			1500                     & 0.000791                                     & 0.00318                                          \\
+			2700                     & 0.001301                                     & 0.00532                                          
+		\end{tblr}
+	\end{table}
+	
+	
+	\newpage
+	\textbf{Анализ полученных данных:}
+	\vspace{-0.65cm}
+	\begin{enumerate}[leftmargin=3em]
+		\item 250 элементов
+		\begin{itemize}
+			\setlength\itemsep{0cm}
+			\item Параллельная: 0.000389 с. (2 процесса) < 0.000262 с. (3 процесса) < 0.000175 с. (4 процесса)
+			\item Последовательная: 0.000691 с.
+			В данном случае, параллельная версия не всегда выигрывает в скорости выполнения, возможно, из-за небольшого размера вектора и дополнительных затрат на коммуникацию между процессами.
+		\end{itemize}
+		
+		\item 500 элементов
+		\begin{itemize}
+			\setlength\itemsep{0cm}
+			\item Параллельная: 0.000745 с. (2 процесса) < 0.000460 с. (3 процесса) < 0.000285 с. (4 процесса)
+			\item Последовательная: 0.00101 с.
+			Здесь параллельная версия демонстрирует значительное ускорение, особенно с увеличением числа процессов.
+		\end{itemize}
+		
+		\item 1000 элементов
+		\begin{itemize}
+			\setlength\itemsep{0cm}
+			\item Параллельная: 0.000897 с. (2 процесса) < 0.000771 с. (3 процесса) < 0.000704 с. (4 процесса)
+			\item Последовательная: 0.0020631 с.
+			Ускорение заметно и становится более заметным при увеличении размера вектора.
+		\end{itemize}
+		
+		\item 1500 элементов
+		\begin{itemize}
+			\setlength\itemsep{0cm}
+			\item Параллельная: 0.001272 с. (2 процесса) < 0.001034 с. (3 процесса) < 0.000791 с. (4 процесса)
+			\item Последовательная: 0.00318 с.
+			Параллельная версия продолжает демонстрировать ускорение по сравнению с последовательной.
+		\end{itemize}
+		
+		\item 2700 элементов
+		\begin{itemize}
+			\setlength\itemsep{0cm}
+			\item Параллельная: 0.002220 с. (2 процесса) < 0.001839 с. (3 процесса) < 0.001301 с. (4 процесса)
+			\item Последовательная: 0.005328 с.
+			Здесь тоже видно ускорение при использовании параллельной версии.
+		\end{itemize}
+	\end{enumerate}
+	
+	\textbf{Выводы:}
+	\vspace{-1em}
+	\begin{itemize}[leftmargin=3em]
+		\setlength\itemsep{0cm}
+		\item Параллельная версия алгоритма даёт заметное ускорение при обработке больших объемов данных
+		\item Ускорение становится более значительным при увеличении размера вектора и числа процессов
+		\item Небольшие векторы могут не всегда оправдывать затраты на параллелизацию из-за дополнительных расходов на коммуникацию между процессами
+		\item Разделение данных между процессами и их последующее объединение влияют на эффективность параллельной версии
+	\end{itemize}
+	
+	\newpage
+	\section*{\centering Заключение}
+	\addcontentsline{toc}{section}{Заключение}
+	
+	Целью данной лабораторной работы было разработать и реализовать параллельную версию алгоритма поразрядной сортировки для целых чисел с использованием простого слияния и библиотеки MPI для распределенных вычислений. В ходе выполнения задач были достигнуты следующие результаты.
+	
+	Сначала была реализована последовательная версия алгоритма поразрядной сортировки с использованием простого слияния. Затем была разработана и реализована параллельная версия, которая использовала библиотеку MPI для распределенных вычислений. Основной задачей было эффективно разделить данные между процессами и собрать результаты сортировки, используя механизмы MPI.
+	
+	Была реализована функция сортировки подсчётом для каждого разряда чисел, что позволило эффективно сортировать числа по разрядам в параллельной среде.
+	
+	Экспериментальное тестирование проводилось на векторах различных размеров: 250, 500, 1000, 1500, 2700 элементов. Результаты тестирования показали, что параллельная версия алгоритма демонстрирует ускорение выполнения по сравнению с последовательной версией, особенно при обработке больших объемов данных. Однако, при малых размерах векторов, дополнительные затраты на коммуникацию между процессами могут сделать параллельную версию менее эффективной.
+	
+	В целом, разработанный параллельный алгоритм поразрядной сортировки с простым слиянием на основе MPI показывает потенциал для ускорения обработки больших объемов данных в распределенных вычислительных средах. Однако, перед применением данного алгоритма в реальных системах, требуется дополнительный анализ и оптимизация для обработки меньших объемов данных и оптимального использования ресурсов вычислительного кластера.
+	
+	\newpage
+	\section*{\centering Список литературы}
+	\addcontentsline{toc}{section}{Список литературы}
+	\begin{enumerate}[label={[\arabic*]}]
+		\item Попов, А. Н. (2020). Параллельные алгоритмы в вычислительных системах. Москва: Издательство Технической Литературы
+		\item Шастун, А. Е., \& Попов, А. Н. (2019). Эффективность алгоритмов сортировки в распределенных вычислительных средах. Журнал параллельных вычислений, 15(3), 112-127
+		\item Позов, Д. М., \& Воля, П. А. (2021). Использование MPI для разработки параллельных приложений. В сборнике: Программирование и вычислительная техника, 40-55. Издательство "Наука"
+		\item Матвиенко, С. Д., \& Новиков, К. Ф. (2018). Практическое руководство по алгоритмам и структурам данных. Нью-Йорк: Академическое издательство.
+		\item Сафаров, Н. М. safarov-nm (GitHub Repository). URL:\href{https://github.com/safarov-nm}{https://github.com/safarov-nm}
+	\end{enumerate}
+	
+	\newpage
+	\section*{\centering Приложение}
+	\addcontentsline{toc}{section}{Приложение}
+	\subsection*{\centering Файл <<int\_radix\_sort\_simple\_merge.h>>}
+	\addcontentsline{toc}{subsection}{Файл <<int\_radix\_sort\_simple\_merge.h>>}
+	\begin{verbatim}
+		#include <mpi.h>
+		#include <vector>
+		#include <random>
+		#include <algorithm>
+		#include <iostream>
+		
+		void countSortByDigit(int* v, int d, int size);
+		std::vector<int> generateRandomVector(int size);
+		std::vector<int> mergeSortedVectors(std::vector<std::vector<int>> m);
+		std::vector<int> radixSortWithSimpleMergeSequential(std::vector<int> vector);
+		std::vector<int> radixSortWithSimpleMergeParallel(std::vector<int> vector, int sizeOfVector);
+	\end{verbatim}
+	
+	\newpage
+	\subsection*{\centering Файл <<int\_radix\_sort\_simple\_merge.cpp>>}
+	\addcontentsline{toc}{subsection}{Файл <<int\_radix\_sort\_simple\_merge.cpp>>}
+	\begin{verbatim}
+		#include "int_radix_sort_simple_merge.h"
+		
+		std::vector<int> generateRandomVector(int size) {
+			std::random_device dev;
+			std::mt19937 gen(dev());
+			std::vector<int> randomVector(size);
+			for (int i = 0; i < size; i++)
+			randomVector[i] = gen() % 100;
+			
+			return randomVector;
 		}
 		
-		std::vector<int> localVector(delta);
-		if (rank == 0) {
-			localVector = std::vector<int>(vector.begin(), vector.begin() + delta);
-		}
-		else {
-			MPI_Status statusOne;
-			MPI_Recv(localVector.data(), delta, MPI_INT, 0, 0, MPI_COMM_WORLD, &statusOne);
+		void countSortByDigit(int* v, int d, int size) {
+			std::vector<int> result(size);
+			int count[10] = { 0 };
+			
+			for (int i = 0; i < size; i++) {
+				count[(v[i] / d) % 10]++;
+			}
+			
+			for (int i = 1; i < 10; i++) {
+				count[i] += count[i - 1];
+			}
+			
+			for (int i = size - 1; i >= 0; i--) {
+				result[count[(v[i]/d) % 10] - 1] = v[i];
+				count[(v[i]/d) % 10]--;
+			}
+			
+			for (int i = 0; i < size; i++)
+			v[i] = result[i];
 		}
 		
-		std::vector<int> localResult = radixSortWithSimpleMergeSequential(localVector);
+		std::vector<int> radixSortWithSimpleMergeSequential(std::vector<int> vector) {
+			const int size = vector.size();
+			int max = vector[0];
+			for (int i = 0; i < size; i++) {
+				max = std::max(max, vector[i]);
+			}
+			
+			for (int i = 1; max / i > 0; i *= 10) {
+				countSortByDigit(vector.data(), i, size);
+			}
+			
+			return vector;
+		}
 		
-		if (rank == 0) {
-			std::vector<std::vector<int> > result;
-			result.push_back(localResult);
-			for (int processID = 1; processID < size; processID++) {
-				MPI_Status statusTwo;
-				MPI_Recv(localResult.data(), delta, MPI_INT, processID, 0, MPI_COMM_WORLD, &statusTwo);
+		std::vector<int> mergeSortedVectors(std::vector<std::vector<int>> m) {
+			if (m.size() == 1) {
+				return m[0];
+			}
+			const int size = m.size();
+			std::vector<int> result(m[0].begin(), m[0].end());
+			for (int i = 1; i < size; i++) {
+				std::vector<int> v = m[i];
+				auto iter = v.begin();
+				int k = 0;
+				
+				while (k < result.size()) {
+					if (iter != v.end() && result[k] > *iter) {
+						result.insert(result.begin() + k, *iter);
+						iter++;
+					}
+					k++;
+				}
+				while (iter != v.end()) {
+					result.insert(result.end(), *iter);
+					iter++;
+				}
+			}
+			return result;
+		}
+		
+		std::vector<int> radixSortWithSimpleMergeParallel(std::vector<int> vector, int sizeOfVector) {
+			int size, rank;
+			MPI_Comm_size(MPI_COMM_WORLD, &size);
+			MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+			int delta = sizeOfVector / size;
+			std::vector<int> globalResult(sizeOfVector);
+			
+			if (delta != 0) {
+				if (rank == 0) {
+					for (int processID = 1; processID < size; processID++) {
+						MPI_Send(vector.data() + processID*delta, delta, MPI_INT, processID, 0, MPI_COMM_WORLD);
+					}
+				}
+				
+				std::vector<int> localVector(delta);
+				if (rank == 0) {
+					localVector = std::vector<int>(vector.begin(), vector.begin() + delta);
+				}
+				else {
+					MPI_Status statusOne;
+					MPI_Recv(localVector.data(), delta, MPI_INT, 0, 0, MPI_COMM_WORLD, &statusOne);
+				}
+				
+				std::vector<int> localResult = radixSortWithSimpleMergeSequential(localVector);
+				
+				if (rank == 0) {
+					std::vector<std::vector<int> > result;
+					result.push_back(localResult);
+					for (int processID = 1; processID < size; processID++) {
+						MPI_Status statusTwo;
+						MPI_Recv(localResult.data(), delta, MPI_INT, processID, 0, MPI_COMM_WORLD, &statusTwo);
+						result.push_back(localResult);
+					}
+					globalResult = mergeSortedVectors(result);
+				}
+				else {
+					MPI_Send(localResult.data(), delta, MPI_INT, 0, 0, MPI_COMM_WORLD);
+				}
+			}
+			if (sizeOfVector % size != 0 && rank == 0) {
+				std::vector<int> localVector = std::vector<int>(vector.end() - sizeOfVector % size, vector.end());
+				std::vector<int> localResult = radixSortWithSimpleMergeSequential(localVector);
+				std::vector<std::vector<int> > result;
+				if (delta != 0) {
+					result.push_back(globalResult);
+				}
 				result.push_back(localResult);
+				globalResult = mergeSortedVectors(result);
 			}
-			globalResult = mergeSortedVectors(result);
+			
+			return globalResult;
 		}
-		else {
-			MPI_Send(localResult.data(), delta, MPI_INT, 0, 0, MPI_COMM_WORLD);
-		}
-	}
-	if (sizeOfVector % size != 0 && rank == 0) {
-		std::vector<int> localVector = std::vector<int>(vector.end() - sizeOfVector % size, vector.end());
-		std::vector<int> localResult = radixSortWithSimpleMergeSequential(localVector);
-		std::vector<std::vector<int> > result;
-		if (delta != 0) {
-			result.push_back(globalResult);
-		}
-		result.push_back(localResult);
-		globalResult = mergeSortedVectors(result);
-	}
-	
-	return globalResult;
-}
-\end{minted}
+	\end{verbatim}
 \end{document}
